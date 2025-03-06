@@ -2,11 +2,21 @@
 session_start();
 include 'connection.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $unilogin = $_POST['unilogin'] ?? '';
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $unilogin = $_POST['unilogin'];
 
-    if (!empty($unilogin)) {
-        $stmt = $conn->prepare("SELECT Unilogin FROM Bruger WHERE Unilogin = ?");
+    if (empty($unilogin)) {
+        echo "Unilogin skal udfyldes!";
+    } else {
+        // Forbered SQL-forespørgsel
+        $sql = "SELECT * FROM Bruger WHERE Unilogin = ?";
+        $stmt = $conn->prepare($sql);
+
+        // Tjek om prepare lykkedes
+        if (!$stmt) {
+            die("SQL fejl: " . $conn->error);
+        }
+
         $stmt->bind_param("s", $unilogin);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -16,10 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             header("Location: Uni_kode.php");
             exit();
         } else {
-            $error = "Ugyldigt Unilogin!";
+            echo "Unilogin ikke fundet!";
         }
-    } else {
-        $error = "Indtast dit Unilogin!";
     }
 }
 ?>
@@ -27,14 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Indtast Unilogin navn</title>
+    <title>UniLogin</title>
 </head>
 <body>
-    <h2>Indtast dit Unilogin</h2>
-    <form method="POST">
-        <input type="text" name="unilogin" placeholder="Unilogin" required>
+    <form method="post">
+        <input type="text" name="unilogin" placeholder="Indtast UniLogin" required>
         <button type="submit">Næste</button>
     </form>
-    <?php if (isset($error)) echo "<p style='color: red;'>$error</p>"; ?>
 </body>
 </html>

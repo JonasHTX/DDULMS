@@ -1,8 +1,7 @@
 <?php
 session_start();
 include 'connection.php';
-?>
-<?php
+
 if (!isset($_SESSION['signed_in']) || $_SESSION['signed_in'] !== true) {
     header("Location: Uni_bruger.php");
     exit();
@@ -15,6 +14,11 @@ if (!isset($_SESSION['signed_in']) || $_SESSION['signed_in'] !== true) {
 </head>
 <body>
     <h1>Du er logget ind som <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h1>
-    <a href="logout.php">Log ud</a>
-</body>
-</html>
+    
+    <a href="admin.php">
+        <button>Gå til Admin Panel</button>
+    </a>
+
+    <a href="logout.php">
+        <button>Log ud</button>
+    </a>
