@@ -1,5 +1,5 @@
 <?php
-ob_start(); 
+ob_start();
 session_start();
 include 'connection.php';
 
@@ -10,15 +10,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
     $level = $_POST["bruger_level"];
     
     $klasse_id = null;
-    
+
     if ($level == 1) {
-        $klasse_ids = explode(",", $_POST["laerer_klasse"]); 
-        $fag_ids = explode(",", $_POST["laerer_fag"]); 
-        foreach ($klasse_ids as $klasse_id) {
-            foreach ($fag_ids as $fag_id) {
-                $stmt2 = $conn->prepare("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) VALUES (?, ?, ?)");
-                $stmt2->bind_param("sii", $unilogin, $klasse_id, $fag_id);
-                $stmt2->execute();
+        if (!empty($_POST["laerer_klasse"]) && !empty($_POST["laerer_fag"])) {
+            foreach ($_POST["laerer_klasse"] as $index => $klasse_id) {
+                if (!empty($_POST["laerer_fag"][$index])) {
+                    foreach ($_POST["laerer_fag"][$index] as $fag_id) {
+                        $stmt2 = $conn->prepare("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) VALUES (?, ?, ?)");
+                        $stmt2->bind_param("sii", $unilogin, $klasse_id, $fag_id);
+                        $stmt2->execute();
+                    }
+                }
             }
         }
         echo "Lærer-info tilføjet!";
@@ -72,6 +74,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_fag"])) {
             document.getElementById("elev_fields").style.display = (level == "0") ? "block" : "none";
             document.getElementById("laerer_fields").style.display = (level == "1") ? "block" : "none";
         }
+
+        function addClassSubjectPair() {
+            let container = document.getElementById("class_subjects_container");
+            let newPair = document.createElement("div");
+            newPair.classList.add("class_subject_pair");
+            newPair.innerHTML = `
+                <label>Vælg Klasse:</label>
+                <select name="laerer_klasse[]" class="class_select">
+                    <option value="1">1.A</option>
+                    <option value="2">2.A</option>
+                    <option value="3">3.A</option>
+                    <option value="4">1.B</option>
+                    <option value="5">2.B</option>
+                    <option value="6">3.B</option>
+                </select>
+
+                <label>Vælg Fag:</label>
+                <select name="laerer_fag[][id][]" class="subject_select" multiple>
+                    <option value="1">Dansk</option>
+                    <option value="2">Matematik</option>
+                    <option value="3">Engelsk</option>
+                </select>
+
+                <button type="button" onclick="this.parentElement.remove()">Fjern</button>
+            `;
+            container.appendChild(newPair);
+        }
     </script>
 </head>
 <body onload="toggleFields()">
@@ -96,16 +125,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_fag"])) {
                 <option value="4">1.B</option>
                 <option value="5">2.B</option>
                 <option value="6">3.B</option>
-                <option value="7">1.C</option>
-                <option value="8">2.C</option>
-                <option value="9">3.C</option>
             </select> 
         </div>
 
         <div id="laerer_fields" style="display: none;">
             <h3>Lærer Information</h3>
-            <input type="text" name="laerer_klasse" placeholder="Klasse ID'er (fx: 1,2,3)">
-            <input type="text" name="laerer_fag" placeholder="Fag ID'er (fx: 4,5,6)">
+            <div id="class_subjects_container">
+                <div class="class_subject_pair">
+                    <label>Vælg Klasse:</label>
+                    <select name="laerer_klasse[]" class="class_select">
+                        <option value="1">1.A</option>
+                        <option value="2">2.A</option>
+                        <option value="3">3.A</option>
+                        <option value="4">1.B</option>
+                        <option value="5">2.B</option>
+                        <option value="6">3.B</option>
+                        <option value="7">1.C</option>
+                        <option value="8">2.C</option>
+                        <option value="9">3.C</option>
+                    </select>
+
+                    <label>Vælg Fag:</label>
+                    <select name="laerer_fag[0][]" class="subject_select" multiple>
+                        <option value="1">Dansk</option>
+                        <option value="2">Engelsk</option>
+                        <option value="3">Matematik</option>
+                        <option value="4">Samfundsfag</option>
+                        <option value="5">Historie</option>
+                        <option value="6">Kemi</option>
+                        <option value="7">Fysik</option>
+                        <option value="8">Idræt</option>
+                        <option value="9">Biologi</option>
+                        <option value="10">Musik</option>
+                    </select>
+
+                    <button type="button" onclick="addClassSubjectPair()">Tilføj flere</button>
+                </div>
+            </div>
         </div>
 
         <button type="submit" name="opret_bruger">Opret Bruger</button>
