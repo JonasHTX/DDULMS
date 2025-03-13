@@ -11,11 +11,14 @@ $level = $_SESSION["level"];
 
 $bruger_fag_klasser = [];
 
-// Hent brugerens klasser og fag
 if ($level == 1) {
     $stmt = $conn->prepare("SELECT DISTINCT Klasse_id, Fag_id FROM Laerer_info WHERE Laerer_Unilogin = ?");
 } else {
     $stmt = $conn->prepare("SELECT DISTINCT Klasse_id FROM Bruger WHERE Unilogin = ?");
+}
+
+if (!$stmt) {
+    die("Fejl i forberedelse af forespørgsel: " . $conn->error);
 }
 
 $stmt->bind_param("s", $unilogin);
@@ -33,7 +36,6 @@ while ($row = $result->fetch_assoc()) {
 $afleveringer = [];
 
 if (!empty($bruger_fag_klasser)) {
-    // Byg dynamisk WHERE-clause
     $where_clauses = [];
     $params = [];
     $types = "";
@@ -51,9 +53,9 @@ if (!empty($bruger_fag_klasser)) {
         }
     }
 
-    // Opdateret query med JOIN til Klasse og Fag
     $query = "
         SELECT 
+            Oprettet_Aflevering.Oprettet_Afl_id,
             Oprettet_Aflevering.Oprettet_Afl_navn, 
             Oprettet_Aflevering.Oprettet_Afl_deadline,
             Klasse.Klasse_navn,
@@ -64,7 +66,15 @@ if (!empty($bruger_fag_klasser)) {
         WHERE " . implode(" OR ", $where_clauses);
 
     $stmt = $conn->prepare($query);
-    $stmt->bind_param($types, ...$params);
+
+    if (!$stmt) {
+        die("Fejl i SQL-forespørgsel: " . $conn->error);
+    }
+
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -75,8 +85,10 @@ if (!empty($bruger_fag_klasser)) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="da">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mine Afleveringer</title>
 </head>
 <body>
@@ -89,7 +101,8 @@ if (!empty($bruger_fag_klasser)) {
                     <strong><?= htmlspecialchars($afl["Oprettet_Afl_navn"]) ?></strong> - 
                     Klasse: <?= htmlspecialchars($afl["Klasse_navn"]) ?>, 
                     Fag: <?= htmlspecialchars($afl["Fag_navn"]) ?> 
-                    (Deadline: <?= $afl["Oprettet_Afl_deadline"] ?>)
+                    (Deadline: <?= htmlspecialchars($afl["Oprettet_Afl_deadline"]) ?>)
+                    <a href="Afleveringer.php?id=<?= intval($afl["Oprettet_Afl_id"]) ?>">Se detaljer</a>
                 </li>
             <?php } ?>
         </ul>

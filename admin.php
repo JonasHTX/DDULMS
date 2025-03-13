@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                 </select>
 
                 <label>V&aelig;lg Fag:</label>
-                <select name="laerer_fag[][id][]" multiple>
+                <select name="laerer_fag[][]" multiple>
                      <option value="1">Dansk</option>
                         <option value="2">Engelsk</option>
                         <option value="3">Matematik</option>
@@ -128,5 +128,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
 
         <button type="submit" name="opret_bruger">Opret Bruger</button>
     </form>
+
+
+  <a href="index.php">
+        <button>Gå tilbage</button>
+
 </body>
 </html>

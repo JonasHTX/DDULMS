@@ -18,6 +18,12 @@ if (!isset($_SESSION['signed_in']) || $_SESSION['signed_in'] !== true) {
     <a href="admin.php">
         <button>Gå til Admin Panel</button>
     </a>
+    <a href="Opretaflevering.php">
+        <button>Opret aflevering</button>
+    </a>
+    <a href="vis_afleveringer.php">
+        <button>vis afleveringer</button>
+    </a>
 
     <a href="logout.php">
         <button>Log ud</button>
