@@ -8,25 +8,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
     $password = sha1($_POST["bruger_password"]); 
     $navn = $_POST["bruger_navn"];
     $level = $_POST["bruger_level"];
-    $stmt = $conn->prepare("INSERT INTO Bruger (Unilogin, Password, Navn, Level) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("sssi", $unilogin, $password, $navn, $level);
-
+    
+    $klasse_id = null;
+    
+    if ($level == 1) {
+        $klasse_ids = explode(",", $_POST["laerer_klasse"]); 
+        $fag_ids = explode(",", $_POST["laerer_fag"]); 
+        foreach ($klasse_ids as $klasse_id) {
+            foreach ($fag_ids as $fag_id) {
+                $stmt2 = $conn->prepare("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) VALUES (?, ?, ?)");
+                $stmt2->bind_param("sii", $unilogin, $klasse_id, $fag_id);
+                $stmt2->execute();
+            }
+        }
+        echo "Lærer-info tilføjet!";
+    } else if ($level == 0) {
+        $klasse_id = $_POST["Klasse_id"];
+    }
+    
+    $stmt = $conn->prepare("INSERT INTO Bruger (Unilogin, Password, Navn, Klasse_id, Level) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssii", $unilogin, $password, $navn, $klasse_id, $level);
     if ($stmt->execute()) {
         echo "Bruger oprettet!";
-        
-        if ($level == 1) {
-            $klasse_ids = explode(",", $_POST["laerer_klasse"]); 
-            $fag_ids = explode(",", $_POST["laerer_fag"]); 
-
-            foreach ($klasse_ids as $klasse_id) {
-                foreach ($fag_ids as $fag_id) {
-                    $stmt2 = $conn->prepare("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) VALUES (?, ?, ?)");
-                    $stmt2->bind_param("sii", $unilogin, $klasse_id, $fag_id);
-                    $stmt2->execute();
-                }
-            }
-            echo "Lærer-info tilføjet!";
-        }
     } else {
         echo "Fejl: " . $stmt->error;
     }
@@ -64,14 +67,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_fag"])) {
 <head>
     <title>Admin Panel</title>
     <script>
-        function toggleLærerFields() {
+        function toggleFields() {
             var level = document.getElementById("bruger_level").value;
-            var laererFields = document.getElementById("laerer_fields");
-            laererFields.style.display = (level == "1") ? "block" : "none";
+            document.getElementById("elev_fields").style.display = (level == "0") ? "block" : "none";
+            document.getElementById("laerer_fields").style.display = (level == "1") ? "block" : "none";
         }
     </script>
 </head>
-<body>
+<body onload="toggleFields()">
     <h1>Admin Panel</h1>
     
     <h2>Opret Bruger</h2>
@@ -80,10 +83,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_fag"])) {
         <input type="password" name="bruger_password" placeholder="Kodeord" required>
         <input type="text" name="bruger_navn" placeholder="Navn" required>
         <label>Level:</label>
-        <select name="bruger_level" id="bruger_level" onchange="toggleLærerFields()" required>
+        <select name="bruger_level" id="bruger_level" onchange="toggleFields()" required>
             <option value="0">Elev</option>
             <option value="1">Lærer</option>
         </select>
+        <div id="elev_fields" style="display: none;">
+            <h3>Elev Information</h3>
+            <select name="Klasse_id" id="elev_klasse" required>
+                <option value="1">1.A</option>
+                <option value="2">2.A</option>
+                <option value="3">3.A</option>
+                <option value="4">1.B</option>
+                <option value="5">2.B</option>
+                <option value="6">3.B</option>
+                <option value="7">1.C</option>
+                <option value="8">2.C</option>
+                <option value="9">3.C</option>
+            </select> 
+        </div>
 
         <div id="laerer_fields" style="display: none;">
             <h3>Lærer Information</h3>
