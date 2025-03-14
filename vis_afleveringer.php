@@ -8,79 +8,39 @@ if (!isset($_SESSION["unilogin"])) {
 
 $unilogin = $_SESSION["unilogin"];
 $level = $_SESSION["level"];
+$klasse_id = null;
+$afleveringer = [];
 
-$bruger_fag_klasser = [];
-
-if ($level == 1) {
-    $stmt = $conn->prepare("SELECT DISTINCT Klasse_id, Fag_id FROM Laerer_info WHERE Laerer_Unilogin = ?");
-} else {
-    $stmt = $conn->prepare("SELECT DISTINCT Klasse_id FROM Bruger WHERE Unilogin = ?");
-}
-
-if (!$stmt) {
-    die("Fejl i forberedelse af forespørgsel: " . $conn->error);
-}
-
+// Hent brugerens klasse_id
+$stmt = $conn->prepare("SELECT Klasse_id FROM Bruger WHERE Unilogin = ?");
 $stmt->bind_param("s", $unilogin);
 $stmt->execute();
 $result = $stmt->get_result();
 
-while ($row = $result->fetch_assoc()) {
-    if ($level == 1) {
-        $bruger_fag_klasser[] = ["Klasse_id" => $row["Klasse_id"], "Fag_id" => $row["Fag_id"]];
-    } else {
-        $bruger_fag_klasser[] = ["Klasse_id" => $row["Klasse_id"], "Fag_id" => null];
-    }
+if ($row = $result->fetch_assoc()) {
+    $klasse_id = $row["Klasse_id"];
+} else {
+    die("Brugerens klasse blev ikke fundet.");
 }
 
-$afleveringer = [];
+if ($level == 1) {
+    // Hent afleveringer for lærere baseret på deres tilknyttede klasser
+    $stmt = $conn->prepare(
+        "SELECT * FROM Oprettet_Aflevering WHERE Klasse_id = ?"
+    );
+} else {
+    // Hent afleveringer for elever baseret på deres klasse_id
+    $stmt = $conn->prepare(
+        "SELECT * FROM Oprettet_Aflevering WHERE Klasse_id = ?"
+    );
+}
 
-if (!empty($bruger_fag_klasser)) {
-    $where_clauses = [];
-    $params = [];
-    $types = "";
+$stmt->bind_param("i", $klasse_id);
+$stmt->execute();
+$result = $stmt->get_result();
 
-    foreach ($bruger_fag_klasser as $row) {
-        if ($row["Fag_id"] !== null) {
-            $where_clauses[] = "(Oprettet_Aflevering.Klasse_id = ? AND Oprettet_Aflevering.Fag_id = ?)";
-            $params[] = $row["Klasse_id"];
-            $params[] = $row["Fag_id"];
-            $types .= "ii";
-        } else {
-            $where_clauses[] = "(Oprettet_Aflevering.Klasse_id = ?)";
-            $params[] = $row["Klasse_id"];
-            $types .= "i";
-        }
-    }
-
-    $query = "
-        SELECT 
-            Oprettet_Aflevering.Oprettet_Afl_id,
-            Oprettet_Aflevering.Oprettet_Afl_navn, 
-            Oprettet_Aflevering.Oprettet_Afl_deadline,
-            Klasse.Klasse_navn,
-            Fag.Fag_navn
-        FROM Oprettet_Aflevering
-        JOIN Klasse ON Oprettet_Aflevering.Klasse_id = Klasse.Klasse_id
-        JOIN Fag ON Oprettet_Aflevering.Fag_id = Fag.Fag_id
-        WHERE " . implode(" OR ", $where_clauses);
-
-    $stmt = $conn->prepare($query);
-
-    if (!$stmt) {
-        die("Fejl i SQL-forespørgsel: " . $conn->error);
-    }
-
-    if (!empty($params)) {
-        $stmt->bind_param($types, ...$params);
-    }
-
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    while ($row = $result->fetch_assoc()) {
-        $afleveringer[] = $row;
-    }
+while ($row = $result->fetch_assoc()) {
+    $afleveringer[] = $row;
 }
 ?>
 
@@ -88,7 +48,6 @@ if (!empty($bruger_fag_klasser)) {
 <html lang="da">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mine Afleveringer</title>
 </head>
 <body>
@@ -99,8 +58,6 @@ if (!empty($bruger_fag_klasser)) {
             <?php foreach ($afleveringer as $afl) { ?>
                 <li>
                     <strong><?= htmlspecialchars($afl["Oprettet_Afl_navn"]) ?></strong> - 
-                    Klasse: <?= htmlspecialchars($afl["Klasse_navn"]) ?>, 
-                    Fag: <?= htmlspecialchars($afl["Fag_navn"]) ?> 
                     (Deadline: <?= htmlspecialchars($afl["Oprettet_Afl_deadline"]) ?>)
                     <a href="Afleveringer.php?id=<?= intval($afl["Oprettet_Afl_id"]) ?>">Se detaljer</a>
                 </li>
@@ -109,8 +66,5 @@ if (!empty($bruger_fag_klasser)) {
     <?php } else { ?>
         <p>Ingen afleveringer fundet.</p>
     <?php } ?>
-
-    <br>
-    <a href="index.php">Tilbage</a>
 </body>
 </html>

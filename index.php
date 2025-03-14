@@ -25,6 +25,10 @@ if (!isset($_SESSION['signed_in']) || $_SESSION['signed_in'] !== true) {
         <button>vis afleveringer</button>
     </a>
 
+     <a href="Evaluering.php">
+        <button>Evaluering</button>
+    </a>
+
     <a href="logout.php">
         <button>Log ud</button>
     </a>
