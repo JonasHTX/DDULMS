@@ -111,3 +111,11 @@ if (isset($_POST['submit_feedback'])) {
 
 $conn->close();
 ?>
+<!DOCTYPE html>
+<html>
+<body>
+
+   <a href="index.php">Tilbage</a>
+
+</body>
+</html>

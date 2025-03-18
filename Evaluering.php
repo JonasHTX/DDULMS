@@ -9,114 +9,146 @@ if (!isset($_SESSION['unilogin'])) {
 
 $unilogin = $_SESSION['unilogin'];
 
-// Hent lærerens fag og klasse
-$stmt = $conn->prepare("SELECT Fag_id, Klasse_id FROM Laerer_info WHERE Laerer_Unilogin = ?");
-if (!$stmt) {
-    die('Fejl ved forberedelse af SQL: ' . $conn->error);
-}
+// Hent brugerens level (0 = elev, 1 = lærer)
+$stmt = $conn->prepare("SELECT Level FROM Bruger WHERE Unilogin = ?");
 $stmt->bind_param("s", $unilogin);
 $stmt->execute();
 $result = $stmt->get_result();
-$laerer_info = $result->fetch_all(MYSQLI_ASSOC);
+$user = $result->fetch_assoc();
 $stmt->close();
 
-if (!$laerer_info) {
-    die("Ingen tilknyttet klasse eller fag fundet.");
+if (!$user) {
+    die("Bruger ikke fundet.");
 }
 
-// Hent afleverede opgaver for alle de kombinationer af fag og klasse læreren er tilknyttet
-$stmt = $conn->prepare("
-    SELECT ea.Elev_Afl_id, ea.Unilogin, ea.Filpath, ea.Elev_Afl_tid, o.Oprettet_Afl_navn, b.Navn, ev.Evaluering_karakter, ev.Feedback
-    FROM Elev_Aflevering ea
-    JOIN Oprettet_Aflevering o ON ea.Oprettet_Afl_id = o.Oprettet_Afl_id
-    JOIN Bruger b ON ea.Unilogin = b.Unilogin
-    LEFT JOIN Evaluering ev ON ea.Elev_Afl_id = ev.Elev_Afl_id
-    WHERE (o.Fag_id, o.Klasse_id) IN (
-        " . implode(',', array_map(function($info) {
-            return "({$info['Fag_id']}, {$info['Klasse_id']})";
-        }, $laerer_info)) . ")
-");
-if (!$stmt) {
-    die('Fejl ved forberedelse af SQL: ' . $conn->error);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$stmt->close();
+$level = $user['Level'];
 
-echo "<h2>Afleverede opgaver</h2>";
+if ($level == 0) { 
+    // **ELEVVISNING**
+    echo "<h2>Mine afleveringer og feedback</h2>";
 
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        echo "<p><strong>" . htmlspecialchars($row['Navn']) . " (" . htmlspecialchars($row['Unilogin']) . ")</strong> har afleveret '" . htmlspecialchars($row['Oprettet_Afl_navn']) . "' 
-              den " . htmlspecialchars($row['Elev_Afl_tid']) . "<br>
-              <a href='" . htmlspecialchars($row['Filpath']) . "' target='_blank'>Download aflevering</a></p>";
-
-        // Vis tidligere feedback hvis den findes
-        $existing_karakter = $row['Evaluering_karakter'] ? $row['Evaluering_karakter'] : "";
-        $existing_feedback = $row['Feedback'] ? htmlspecialchars($row['Feedback']) : "";
-
-        echo "<form method='POST'>
-                <input type='hidden' name='elev_afl_id' value='" . $row['Elev_Afl_id'] . "'>
-                <label for='karakter'>Karakter:</label>
-                <select name='karakter' required>
-                    <option value='' " . ($existing_karakter == "" ? "selected" : "") . ">Vælg karakter</option>
-                    <option value='12' " . ($existing_karakter == "12" ? "selected" : "") . ">12</option>
-                    <option value='10' " . ($existing_karakter == "10" ? "selected" : "") . ">10</option>
-                    <option value='7' " . ($existing_karakter == "7" ? "selected" : "") . ">7</option>
-                    <option value='4' " . ($existing_karakter == "4" ? "selected" : "") . ">4</option>
-                    <option value='02' " . ($existing_karakter == "02" ? "selected" : "") . ">02</option>
-                    <option value='00' " . ($existing_karakter == "00" ? "selected" : "") . ">00</option>
-                    <option value='-3' " . ($existing_karakter == "-3" ? "selected" : "") . ">-3</option>
-                </select>
-                <br>
-                <label for='feedback'>Feedback:</label>
-                <textarea name='feedback' required>$existing_feedback</textarea>
-                <br>
-                <input type='submit' name='submit_feedback' value='Send feedback'>
-              </form><hr>";
-    }
-} else {
-    echo "<p>Ingen afleveringer endnu.</p>";
-}
-
-// Håndter feedback indsendelse
-if (isset($_POST['submit_feedback'])) {
-    $elev_afl_id = $_POST['elev_afl_id'];
-    $karakter = $_POST['karakter'];
-    $feedback = $_POST['feedback'];
-
-    // Tjek om feedback allerede eksisterer
-    $stmt = $conn->prepare("SELECT * FROM Evaluering WHERE Elev_Afl_id = ?");
-    if (!$stmt) {
-        die('Fejl ved forberedelse af SQL: ' . $conn->error);
-    }
-    $stmt->bind_param("i", $elev_afl_id);
+    $stmt = $conn->prepare("
+        SELECT ea.Elev_Afl_id, o.Oprettet_Afl_navn, ea.Elev_Afl_tid, ea.Filpath, 
+               ev.Evaluering_karakter, ev.Feedback, ev.Filpath AS FeedbackFil
+        FROM Elev_Aflevering ea
+        JOIN Oprettet_Aflevering o ON ea.Oprettet_Afl_id = o.Oprettet_Afl_id
+        LEFT JOIN Evaluering ev ON ea.Elev_Afl_id = ev.Elev_Afl_id
+        WHERE ea.Unilogin = ?
+    ");
+    $stmt->bind_param("s", $unilogin);
     $stmt->execute();
     $result = $stmt->get_result();
     $stmt->close();
 
     if ($result->num_rows > 0) {
-        // Opdater eksisterende feedback
-        $stmt = $conn->prepare("UPDATE Evaluering SET Evaluering_karakter = ?, Feedback = ? WHERE Elev_Afl_id = ?");
-        if (!$stmt) {
-            die('Fejl ved forberedelse af SQL: ' . $conn->error);
+        while ($row = $result->fetch_assoc()) {
+            echo "<p><strong>Opgave:</strong> " . htmlspecialchars($row['Oprettet_Afl_navn']) . "<br>";
+            echo "<strong>Afleveret den:</strong> " . htmlspecialchars($row['Elev_Afl_tid']) . "<br>";
+            echo "<a href='uploads/" . htmlspecialchars(basename($row['Filpath'])) . "' target='_blank'>Download aflevering</a><br>";
+
+            if ($row['Evaluering_karakter']) {
+                echo "<strong>Karakter:</strong> " . htmlspecialchars($row['Evaluering_karakter']) . "<br>";
+                echo "<strong>Feedback:</strong> " . nl2br(htmlspecialchars($row['Feedback'])) . "<br>";
+
+                if (!empty($row['FeedbackFil'])) {
+                    echo "<a href='uploads/" . htmlspecialchars(basename($row['FeedbackFil'])) . "' download>Download feedback-fil</a><br>";
+                }
+            } else {
+                echo "<em>Ingen feedback endnu.</em>";
+            }
+            echo "<hr>";
         }
-        $stmt->bind_param("ssi", $karakter, $feedback, $elev_afl_id);
     } else {
-        $stmt = $conn->prepare("INSERT INTO Evaluering (Elev_Afl_id, Evaluering_karakter, Feedback) VALUES (?, ?, ?)");
-        if (!$stmt) {
-            die('Fejl ved forberedelse af SQL: ' . $conn->error);
+        echo "<p>Du har ikke afleveret nogen opgaver endnu.</p>";
+    }
+} elseif ($level == 1) {  
+    // **LÆRERVISNING**
+    echo "<h2>Ret afleveringer</h2>";
+
+    $stmt = $conn->prepare("
+        SELECT ea.Elev_Afl_id, ea.Unilogin, o.Oprettet_Afl_navn, ea.Elev_Afl_tid, ea.Filpath
+        FROM Elev_Aflevering ea
+        JOIN Oprettet_Aflevering o ON ea.Oprettet_Afl_id = o.Oprettet_Afl_id
+        LEFT JOIN Evaluering ev ON ea.Elev_Afl_id = ev.Elev_Afl_id
+        WHERE ev.Elev_Afl_id IS NULL
+    ");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            echo "<form method='POST' action='' enctype='multipart/form-data'>";
+            echo "<p><strong>Opgave:</strong> " . htmlspecialchars($row['Oprettet_Afl_navn']) . "<br>";
+            echo "<strong>Afleveret af:</strong> " . htmlspecialchars($row['Unilogin']) . "<br>";
+            echo "<a href='uploads/" . htmlspecialchars(basename($row['Filpath'])) . "' target='_blank'>Download aflevering</a><br>";
+            
+            echo "<input type='hidden' name='Elev_Afl_id' value='" . $row['Elev_Afl_id'] . "'>";
+            echo "<label for='karakter'>Karakter:</label> ";
+            echo "<input type='text' name='karakter' required><br>";
+            
+            echo "<label for='feedback'>Feedback:</label><br>";
+            echo "<textarea name='feedback' rows='4' cols='50' required></textarea><br>";
+
+            echo "<label for='feedback_file'>Upload feedback-fil:</label> ";
+            echo "<input type='file' name='feedback_file' accept='.pdf,.docx,.txt'><br>";
+
+            echo "<input type='submit' name='submit_feedback' value='Gem feedback'>";
+            echo "</form><hr>";
         }
-        $stmt->bind_param("iss", $elev_afl_id, $karakter, $feedback);
+    } else {
+        echo "<p>Ingen afleveringer mangler rettelse.</p>";
+    }
+}
+
+// **Håndtering af feedback-indsendelse**
+if ($level == 1 && isset($_POST['submit_feedback'])) {
+    $Elev_Afl_id = $_POST['Elev_Afl_id'];
+    $karakter = $_POST['karakter'];
+    $feedback = $_POST['feedback'];
+    $feedbackFilpath = null;
+
+    // **Håndtering af feedback-fil**
+    if (!empty($_FILES['feedback_file']['name'])) {
+        $uploadDir = "uploads/";
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = basename($_FILES['feedback_file']['name']);
+        $filePath = $uploadDir . uniqid() . "_" . $fileName;
+        $fileType = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        // **Tilladte filtyper**
+        $allowedTypes = ['pdf', 'docx', 'txt'];
+        if (in_array($fileType, $allowedTypes)) {
+            if (move_uploaded_file($_FILES['feedback_file']['tmp_name'], $filePath)) {
+                $feedbackFilpath = $filePath;
+            } else {
+                echo "<p style='color: red;'>Fejl ved upload af feedback-filen.</p>";
+            }
+        } else {
+            echo "<p style='color: red;'>Ugyldig filtype! Kun PDF, DOCX og TXT tilladt.</p>";
+        }
     }
 
-    if ($stmt->execute()) {
-        echo "<p>Feedback gemt!</p>";
-    } else {
-        echo "<p>Fejl ved gemning af feedback.</p>";
-    }
+    // **Gem feedback og karakter i databasen**
+    $stmt = $conn->prepare("
+        INSERT INTO Evaluering (Elev_Afl_id, Evaluering_karakter, Feedback, Filpath) 
+        VALUES (?, ?, ?, ?)
+    ");
+    $stmt->bind_param("isss", $Elev_Afl_id, $karakter, $feedback, $feedbackFilpath);
+    $stmt->execute();
     $stmt->close();
+
+    echo "<p style='color: green;'>Feedback gemt!</p>";
 }
 
 $conn->close();
 ?>
+<!DOCTYPE html>
+<html>
+<body>
+   <a href="index.php">Tilbage</a>
+</body>
+</html>
