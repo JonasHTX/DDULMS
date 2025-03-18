@@ -24,12 +24,10 @@ if ($row = $result->fetch_assoc()) {
 }
 
 if ($level == 1) {
-    // Hent afleveringer for lærere baseret på deres tilknyttede klasser
     $stmt = $conn->prepare(
         "SELECT * FROM Oprettet_Aflevering WHERE Klasse_id = ?"
     );
 } else {
-    // Hent afleveringer for elever baseret på deres klasse_id
     $stmt = $conn->prepare(
         "SELECT * FROM Oprettet_Aflevering WHERE Klasse_id = ?"
     );
