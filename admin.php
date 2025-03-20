@@ -3,6 +3,57 @@ ob_start();
 session_start();
 include 'connection.php';
 
+// Opdater klasse ID'er ved årets afslutning
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aret_omme"])) {
+    // Slet elever der går ud af skolen (Klasse_id 3, 6, 9)
+    $stmt_delete = $conn->prepare("DELETE FROM Bruger WHERE Level = 0 AND Klasse_id IN (3, 6, 9)");
+    $stmt_delete->execute();
+
+    // Opdater de resterende elever til næste klassetrin
+    $stmt_update = $conn->prepare("UPDATE Bruger SET Klasse_id = Klasse_id + 1 WHERE Level = 0 AND Klasse_id NOT IN (3, 6, 9)");
+    $stmt_update->execute();
+
+    echo "Klasser opdateret! Elever i sidste årgang er blevet slettet.";
+}
+//vis alle brugere
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["hent_brugere"])) {
+    // Forbered SQL-forespørgsel for at hente brugerdata og tilhørende lærerinfo
+    $stmt = $conn->prepare("
+        SELECT Bruger.Unilogin AS Bruger_Unilogin, Bruger.Navn AS Bruger_Navn, Bruger.Level, Bruger.Klasse_id, 
+               Laerer_info.Klasse_id AS Laerer_Klasse_id, Laerer_info.Fag_id, Laerer_info.Laerer_Unilogin
+        FROM Bruger
+        LEFT JOIN Laerer_info ON Bruger.Unilogin = Laerer_info.Laerer_Unilogin
+    ");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    echo "<h2>Brugerliste</h2><ul>";
+    
+    // Hent og vis hver bruger
+    while ($row = $result->fetch_assoc()) {
+        // Fælles for både elever og lærere
+        $unilogin = htmlspecialchars($row['Bruger_Unilogin']);
+        $navn = htmlspecialchars($row['Bruger_Navn']);
+        $klasse = isset($row['Laerer_Klasse_id']) ? $row['Laerer_Klasse_id'] : (isset($row['Klasse_id']) ? $row['Klasse_id'] : "Ingen klasse");
+        $fag = isset($row['Fag_id']) ? $row['Fag_id'] : "Ingen fag";
+        
+        // Tjek om brugeren er elev eller lærer
+        if ($row['Level'] == 0) {
+            // Hvis bruger er elev
+            echo "<li>" . $navn . " (Elev, Unilogin: " . $unilogin . ", Klasse: " . $klasse . ")</li>";
+        } else {
+            // Hvis bruger er lærer
+            $lærer_unilogin = isset($row['Laerer_Unilogin']) ? $row['Laerer_Unilogin'] : "Ingen Unilogin";
+            echo "<li>" . $navn . " (Lærer, Unilogin: " . $lærer_unilogin . ", Klasse: " . $klasse . ", Fag: " . $fag . ")</li>";
+        }
+    }
+    echo "</ul>";
+}
+
+
+
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
     $unilogin = $_POST["bruger_unilogin"];
     $password = sha1($_POST["bruger_password"]);
@@ -24,8 +75,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
             foreach ($_POST["laerer_klasse"] as $index => $klasse_id) {
                 if (!empty($_POST["laerer_fag"][$index])) {
                     foreach ($_POST["laerer_fag"][$index] as $fag_id) {
-                        $stmt2 = $conn->prepare("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id, Navn) VALUES (?, ?, ?, ?)");
-                        $stmt2->bind_param("siis", $unilogin, $klasse_id, $fag_id, $navn);
+                        $stmt2 = $conn->prepare("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) VALUES (?, ?, ?)");
+                        $stmt2->bind_param("sii", $unilogin, $klasse_id, $fag_id);
                         $stmt2->execute();
                     }
                 }
@@ -102,6 +153,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         <select name="bruger_level" id="bruger_level" onchange="toggleFields()" required>
             <option value="0">Elev</option>
             <option value="1">L&aelig;rer</option>
+            <option value="2">Administrator</option>
         </select>
         
         <div id="elev_fields" style="display: none;">
@@ -129,9 +181,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         <button type="submit" name="opret_bruger">Opret Bruger</button>
     </form>
 
+        <h2>Året er omme</h2>
+    <form method="POST">
+        <button type="submit" name="aret_omme">Opdater Klasser</button>
+        </form>
+
+        <h2>Brugere</h2>
+     <form method="POST">
+   <button type="submit" name="hent_brugere">Vis Brugere</button>
+</form>
+
 
   <a href="index.php">
         <button>Gå tilbage</button>
+
+
 
 </body>
 </html>
