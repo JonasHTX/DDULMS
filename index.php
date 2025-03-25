@@ -27,16 +27,20 @@ $user_level = $user['Level'];
 <body>
     <h1>Du er logget ind som <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h1>
 
-    <!-- Kun vis knappen hvis level = 2 -->
+    <!-- Kun vis Admin Panel knappen hvis level = 2 -->
     <?php if ($user_level == 2): ?>
         <a href="admin.php">
             <button>Gå til Admin Panel</button>
         </a>
     <?php endif; ?>
 
-    <a href="Opretaflevering.php">
-        <button>Opret aflevering</button>
-    </a>
+    <!-- Kun vis Opret aflevering knappen hvis level = 1 (lærer) eller 2 (admin) -->
+    <?php if ($user_level == 1 || $user_level == 2): ?>
+        <a href="Opretaflevering.php">
+            <button>Opret aflevering</button>
+        </a>
+    <?php endif; ?>
+
     <a href="vis_afleveringer.php">
         <button>Vis afleveringer</button>
     </a>
