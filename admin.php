@@ -15,7 +15,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aret_omme"])) {
 
     echo "Klasser opdateret! Elever i sidste årgang er blevet slettet.";
 }
-//vis alle brugere
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["hent_brugere"])) {
     // Forbered SQL-forespørgsel for at hente brugerdata og tilhørende lærerinfo
     $stmt = $conn->prepare("
@@ -23,33 +22,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["hent_brugere"])) {
                Laerer_info.Klasse_id AS Laerer_Klasse_id, Laerer_info.Fag_id, Laerer_info.Laerer_Unilogin
         FROM Bruger
         LEFT JOIN Laerer_info ON Bruger.Unilogin = Laerer_info.Laerer_Unilogin
+        ORDER BY Bruger.Navn, Laerer_info.Klasse_id, Laerer_info.Fag_id
     ");
     $stmt->execute();
     $result = $stmt->get_result();
     
     echo "<h2>Brugerliste</h2><ul>";
     
-    // Hent og vis hver bruger
+    // Array til at gemme lærere og deres kombinationer
+    $laerere = [];
+    
+    // Hent alle brugere
     while ($row = $result->fetch_assoc()) {
-        // Fælles for både elever og lærere
         $unilogin = htmlspecialchars($row['Bruger_Unilogin']);
         $navn = htmlspecialchars($row['Bruger_Navn']);
-        $klasse = isset($row['Laerer_Klasse_id']) ? $row['Laerer_Klasse_id'] : (isset($row['Klasse_id']) ? $row['Klasse_id'] : "Ingen klasse");
-        $fag = isset($row['Fag_id']) ? $row['Fag_id'] : "Ingen fag";
         
-        // Tjek om brugeren er elev eller lærer
+        // Hvis bruger er elev
         if ($row['Level'] == 0) {
-            // Hvis bruger er elev
+            $klasse = isset($row['Klasse_id']) ? $row['Klasse_id'] : "Ingen klasse";
             echo "<li>" . $navn . " (Elev, Unilogin: " . $unilogin . ", Klasse: " . $klasse . ")</li>";
-        } else {
-            // Hvis bruger er lærer
-            $lærer_unilogin = isset($row['Laerer_Unilogin']) ? $row['Laerer_Unilogin'] : "Ingen Unilogin";
-            echo "<li>" . $navn . " (Lærer, Unilogin: " . $lærer_unilogin . ", Klasse: " . $klasse . ", Fag: " . $fag . ")</li>";
+        } 
+        // Hvis bruger er lærer
+        else {
+            $laerer_unilogin = isset($row['Laerer_Unilogin']) ? $row['Laerer_Unilogin'] : "Ingen Unilogin";
+            $klasse = isset($row['Laerer_Klasse_id']) ? $row['Laerer_Klasse_id'] : "Ingen klasse";
+            $fag = isset($row['Fag_id']) ? $row['Fag_id'] : "Ingen fag";
+            
+            // Gem kombinationer for læreren
+            if (!isset($laerere[$unilogin])) {
+                $laerere[$unilogin] = [
+                    'navn' => $navn,
+                    'unilogin' => $laerer_unilogin,
+                    'kombinationer' => []
+                ];
+            }
+            
+            if ($klasse !== "Ingen klasse" && $fag !== "Ingen fag") {
+                $laerere[$unilogin]['kombinationer'][] = "(Klasse: $klasse Fag: $fag)";
+            }
         }
     }
+    
+    // Udskriv lærerne med alle deres kombinationer
+    foreach ($laerere as $laerer) {
+        $kombinationer = !empty($laerer['kombinationer']) ? 
+                         implode(", ", $laerer['kombinationer']) : 
+                         "Ingen tilknyttede klasser/fag";
+        
+        echo "<li>" . $laerer['navn'] . " (Lærer, Unilogin: " . $laerer['unilogin'] . ", " . $kombinationer . ")</li>";
+    }
+    
     echo "</ul>";
 }
-
 
 
 
