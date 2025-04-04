@@ -3,13 +3,13 @@ ob_start();
 session_start();
 include 'connection.php';
 
-// Opdater klasse ID'er ved årets afslutning
+// Opdater klasse ID ved årets afslutning
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aret_omme"])) {
     // Slet elever der går ud af skolen (Klasse_id 3, 6, 9)
     $stmt_delete = $conn->prepare("DELETE FROM Bruger WHERE Level = 0 AND Klasse_id IN (3, 6, 9)");
     $stmt_delete->execute();
 
-    // Opdater de resterende elever til næste klassetrin
+    // Opdater de alle andre elever
     $stmt_update = $conn->prepare("UPDATE Bruger SET Klasse_id = Klasse_id + 1 WHERE Level = 0 AND Klasse_id NOT IN (3, 6, 9)");
     $stmt_update->execute();
 

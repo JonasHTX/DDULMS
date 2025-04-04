@@ -3,8 +3,56 @@
   "WorkspaceRootPath": "C:\\Users\\jonas\\source\\repos\\DDULMS\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\admin.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:admin.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\index.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:index.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\Evaluering.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Evaluering.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\Afleveringer.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Afleveringer.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\vis_afleveringer.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:vis_afleveringer.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\Opretaflevering.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Opretaflevering.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:.gitignore||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\Uni_kode.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Uni_kode.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\connection.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:connection.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\Uni_bruger.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Uni_bruger.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\logout.php||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:logout.php||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\header.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:header.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\jonas\\source\\repos\\DDULMS\\footer.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:footer.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,7 +62,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -26,16 +74,161 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Evaluering.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Evaluering.php",
+              "RelativeDocumentMoniker": "Evaluering.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Evaluering.php",
+              "RelativeToolTip": "Evaluering.php",
+              "ViewState": "AQIAAFABAAAAAAAAAAAwwGcBAAAHAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-14T08:26:16.781Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Afleveringer.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Afleveringer.php",
+              "RelativeDocumentMoniker": "Afleveringer.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Afleveringer.php",
+              "RelativeToolTip": "Afleveringer.php",
+              "ViewState": "AQIAAGMAAAAAAAAAAAAAAHgAAAAHAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-13T08:49:53.432Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "vis_afleveringer.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\vis_afleveringer.php",
+              "RelativeDocumentMoniker": "vis_afleveringer.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\vis_afleveringer.php",
+              "RelativeToolTip": "vis_afleveringer.php",
+              "ViewState": "AQIAAG0AAAAAAAAAAAAwwIQAAAAWAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-13T08:49:49.56Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "admin.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\admin.php",
+              "RelativeDocumentMoniker": "admin.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\admin.php",
+              "RelativeToolTip": "admin.php",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T08:35:32.955Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Opretaflevering.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Opretaflevering.php",
+              "RelativeDocumentMoniker": "Opretaflevering.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Opretaflevering.php",
+              "RelativeToolTip": "Opretaflevering.php",
+              "ViewState": "AQIAAFoAAAAAAAAAAAAAAG4AAAACAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T07:57:37.19Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "index.php",
               "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\index.php",
               "RelativeDocumentMoniker": "index.php",
               "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\index.php",
               "RelativeToolTip": "index.php",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAACwAAAApAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2025-02-28T10:37:15.797Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": ".gitignore",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\.gitignore",
+              "RelativeDocumentMoniker": ".gitignore",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\.gitignore",
+              "RelativeToolTip": ".gitignore",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-13T08:58:50.681Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Uni_kode.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Uni_kode.php",
+              "RelativeDocumentMoniker": "Uni_kode.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Uni_kode.php",
+              "RelativeToolTip": "Uni_kode.php",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAEAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T07:39:10.593Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "connection.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\connection.php",
+              "RelativeDocumentMoniker": "connection.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\connection.php",
+              "RelativeToolTip": "connection.php",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAwAAAACAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T07:35:22.27Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Uni_bruger.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Uni_bruger.php",
+              "RelativeDocumentMoniker": "Uni_bruger.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\Uni_bruger.php",
+              "RelativeToolTip": "Uni_bruger.php",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABwAAAApAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T07:38:54.519Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "logout.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\logout.php",
+              "RelativeDocumentMoniker": "logout.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\logout.php",
+              "RelativeToolTip": "logout.php",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAYAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T08:03:26.508Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "header.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\header.php",
+              "RelativeDocumentMoniker": "header.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\header.php",
+              "RelativeToolTip": "header.php",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAIAAAACAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T07:31:29.821Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "footer.php",
+              "DocumentMoniker": "C:\\Users\\jonas\\source\\repos\\DDULMS\\footer.php",
+              "RelativeDocumentMoniker": "footer.php",
+              "ToolTip": "C:\\Users\\jonas\\source\\repos\\DDULMS\\footer.php",
+              "RelativeToolTip": "footer.php",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAIAAAACAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-03-06T07:35:01.295Z"
             }
           ]
         }
