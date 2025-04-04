@@ -3,82 +3,55 @@ session_start();
 include 'connection.php';
 
 if (!isset($_SESSION["unilogin"])) {
-    die("Du skal være logget ind!");
+    header("Location: login.php");
+    exit();
 }
 
 $unilogin = $_SESSION["unilogin"];
-$klasse_id = null;
-$afleveringer = [];
-$afleveringer_per_fag = [];
-$afleverede_opgaver = [];
 $is_teacher = false;
 
-// Hent brugerens info (klasse_id og level)
-$stmt = $conn->prepare("SELECT Klasse_id, Level FROM Bruger WHERE Unilogin = ?");
+// Hent brugerinfo
+$stmt = $conn->prepare("SELECT Level FROM Bruger WHERE Unilogin = ?");
 $stmt->bind_param("s", $unilogin);
 $stmt->execute();
-$result = $stmt->get_result();
-
-if ($row = $result->fetch_assoc()) {
-    $klasse_id = $row["Klasse_id"];
-    $is_teacher = ($row["Level"] == 1); // Hvis Level er 1, er brugeren lærer
-} else {
-    die("Bruger ikke fundet.");
-}
+$user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+
+if (!$user) die("Bruger ikke fundet");
+
+$is_teacher = ($user['Level'] == 1);
 
 if ($is_teacher) {
-    // HENT AFLEVERINGER SOM LÆRER HAR OPRETTET
-    $stmt = $conn->prepare(
-        "SELECT Oprettet_Aflevering.*, Fag.Fag_navn 
-         FROM Oprettet_Aflevering 
-         JOIN Fag ON Oprettet_Aflevering.Fag_id = Fag.Fag_id
-         WHERE EXISTS (
-             SELECT 1 FROM Laerer_info 
-             WHERE Laerer_info.Laerer_Unilogin = ? 
-             AND Laerer_info.Klasse_id = Oprettet_Aflevering.Klasse_id
-             AND Laerer_info.Fag_id = Oprettet_Aflevering.Fag_id
-         )
-         ORDER BY Oprettet_Aflevering.Oprettet_Afl_deadline DESC"
-    );
-    $stmt->bind_param("s", $unilogin);
-} else {
-    // HENT AFLEVERINGER FOR ELEV (som før)
-    // Hent opgaver som eleven allerede har afleveret
-    $stmt = $conn->prepare("SELECT Oprettet_Afl_id FROM Elev_Aflevering WHERE Unilogin = ?");
+    // Hent lærerens afleveringer med antal afleveringer
+    $stmt = $conn->prepare("
+        SELECT 
+            o.Oprettet_Afl_id,
+            o.Oprettet_Afl_navn,
+            o.Oprettet_Afl_deadline,
+            o.Klasse_id,
+            f.Fag_navn,
+            COUNT(ea.Elev_Afl_id) AS antal_afleveret,
+            (SELECT COUNT(*) FROM Bruger WHERE Klasse_id = o.Klasse_id AND Level = 0) AS antal_elever
+        FROM 
+            Oprettet_Aflevering o
+        JOIN 
+            Fag f ON o.Fag_id = f.Fag_id
+        JOIN 
+            Laerer_info l ON o.Klasse_id = l.Klasse_id AND o.Fag_id = l.Fag_id
+        LEFT JOIN 
+            Elev_Aflevering ea ON o.Oprettet_Afl_id = ea.Oprettet_Afl_id
+        WHERE 
+            l.Laerer_Unilogin = ?
+        GROUP BY 
+            o.Oprettet_Afl_id
+        ORDER BY 
+            o.Oprettet_Afl_deadline DESC
+    ");
     $stmt->bind_param("s", $unilogin);
     $stmt->execute();
-    $result = $stmt->get_result();
-
-    while ($row = $result->fetch_assoc()) {
-        $afleverede_opgaver[] = $row["Oprettet_Afl_id"];
-    }
+    $afleveringer = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
-
-    // Hent alle afleveringer for klassen, som eleven ikke allerede har afleveret
-    $stmt = $conn->prepare(
-        "SELECT Oprettet_Aflevering.*, Fag.Fag_navn 
-         FROM Oprettet_Aflevering 
-         JOIN Fag ON Oprettet_Aflevering.Fag_id = Fag.Fag_id
-         WHERE Oprettet_Aflevering.Klasse_id = ?
-         ORDER BY Oprettet_Aflevering.Oprettet_Afl_deadline DESC"
-    );
-    $stmt->bind_param("i", $klasse_id);
 }
-
-$stmt->execute();
-$result = $stmt->get_result();
-
-while ($row = $result->fetch_assoc()) {
-    // For elever: Filtrer afleverede opgaver væk
-    if (!$is_teacher && in_array($row["Oprettet_Afl_id"], $afleverede_opgaver)) {
-        continue;
-    }
-    
-    $afleveringer[] = $row;
-    $afleveringer_per_fag[$row["Fag_navn"]][] = $row;
-}
-$stmt->close();
 $conn->close();
 ?>
 
@@ -86,56 +59,123 @@ $conn->close();
 <html lang="da">
 <head>
     <meta charset="UTF-8">
-    <title>Mine Afleveringer</title>
+    <title>Lærers afleveringsoversigt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .deadline-passed {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .deadline-soon {
+            color: #e67e22;
+        }
+        .deadline-ok {
+            color: #27ae60;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        .progress-bar {
+            height: 20px;
+            border-radius: 5px;
+            background-color: #2ecc71;
+            text-align: center;
+            color: white;
+            line-height: 20px;
+        }
+    </style>
 </head>
 <body>
-    <?php if ($is_teacher) { ?>
-        <h1>Afleveringer du har oprettet</h1>
-    <?php } else { ?>
-        <h1>Afleveringer, du endnu ikke har afleveret</h1>
-    <?php } ?>
+    <h1>Mine afleveringer</h1>
+    
+    <?php if (!empty($afleveringer)): ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Opgave</th>
+                    <th>Fag</th>
+                    <th>Klasse</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($afleveringer as $aflevering): 
+                    $deadline = new DateTime($aflevering['Oprettet_Afl_deadline']);
+                    $now = new DateTime();
+                    $interval = $now->diff($deadline);
+                    $days_left = $interval->days;
+                    $deadline_class = '';
+                    
+                    if ($deadline < $now) {
+                        $deadline_class = 'deadline-passed';
+                        $status_text = 'Udløbet for ' . $days_left . ' dage siden';
+                    } elseif ($days_left <= 3) {
+                        $deadline_class = 'deadline-soon';
+                        $status_text = 'Udløber om ' . $days_left . ' dage';
+                    } else {
+                        $deadline_class = 'deadline-ok';
+                        $status_text = 'Aktiv (' . $days_left . ' dage tilbage)';
+                    }
+                    
+                    $progress = $aflevering['antal_elever'] > 0 
+                        ? round(($aflevering['antal_afleveret'] / $aflevering['antal_elever']) * 100) 
+                        : 0;
+                ?>
+                <tr>
+                    <td><?= htmlspecialchars($aflevering['Oprettet_Afl_navn']) ?></td>
+                    <td><?= htmlspecialchars($aflevering['Fag_navn']) ?></td>
+                    <td><?= htmlspecialchars($aflevering['Klasse_id']) ?></td>
+                    <td class="<?= $deadline_class ?>">
+                        <?= $deadline->format('d/m/Y H:i') ?>
+                        <br><small><?= $status_text ?></small>
+                    </td>
+                    <td>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width:<?= $progress ?>%">
+                                <?= $aflevering['antal_afleveret'] ?>/<?= $aflevering['antal_elever'] ?>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="Evaluering.php?oprettet_afl_id=<?= $aflevering['Oprettet_Afl_id'] ?>">
+                            Se detaljer 
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <p>Du har ikke oprettet nogen afleveringer endnu.</p>
+    <?php endif; ?>
 
-    <?php if (!empty($afleveringer)) { ?>
-        <ul>
-            <?php foreach ($afleveringer as $afl) { ?>
-                <li>
-                    <strong><?= htmlspecialchars($afl["Oprettet_Afl_navn"]) ?></strong> - 
-                    (Fag: <?= htmlspecialchars($afl["Fag_navn"]) ?>, 
-                    Klasse: <?= htmlspecialchars($afl["Klasse_id"]) ?>, 
-                    Deadline: <?= htmlspecialchars($afl["Oprettet_Afl_deadline"]) ?>)
-                    <?php if ($is_teacher) { ?>
-                        <a href="Evaluering.php?id=<?= intval($afl["Oprettet_Afl_id"]) ?>">Se afleveret</a>
-                    <?php } else { ?>
-                        <a href="Afleveringer.php?id=<?= intval($afl["Oprettet_Afl_id"]) ?>">Se detaljer</a>
-                    <?php } ?>
-                </li>
-            <?php } ?>
-        </ul>
-    <?php } else { ?>
-        <p><?= $is_teacher ? 'Du har ikke oprettet nogen afleveringer endnu.' : 'Du har afleveret alle opgaver.' ?></p>
-    <?php } ?>
-
-    <?php if (!$is_teacher) { ?>
-        <h1>Afleveringer sorteret efter fag</h1>
-        
-        <?php if (!empty($afleveringer_per_fag)) { ?>
-            <?php foreach ($afleveringer_per_fag as $fag_navn => $afleveringer) { ?>
-                <h2><?= htmlspecialchars($fag_navn) ?></h2>
-                <ul>
-                    <?php foreach ($afleveringer as $afl) { ?>
-                        <li>
-                            <strong><?= htmlspecialchars($afl["Oprettet_Afl_navn"]) ?></strong> - 
-                            (Deadline: <?= htmlspecialchars($afl["Oprettet_Afl_deadline"]) ?>)
-                            <a href="Afleveringer.php?id=<?= intval($afl["Oprettet_Afl_id"]) ?>">Se detaljer</a>
-                        </li>
-                    <?php } ?>
-                </ul>
-            <?php } ?>
-        <?php } else { ?>
-            <p>Ingen afleveringer fundet.</p>
-        <?php } ?>
-    <?php } ?>
-
-    <a href="index.php">Tilbage</a>
+    <p><a href="index.php"> Tilbage til forsiden</a></p>
 </body>
 </html>

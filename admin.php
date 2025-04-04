@@ -3,116 +3,70 @@ ob_start();
 session_start();
 include 'connection.php';
 
-// Opdater klasse ID ved årets afslutning
+// Håndter sletning af bruger
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["slet_bruger"])) {
+    $unilogin = $_POST["unilogin"];
+    
+    // Slet først fra Laerer_info hvis det er en lærer
+    $conn->query("DELETE FROM Laerer_info WHERE Laerer_Unilogin = '$unilogin'");
+    
+    // Slet fra Bruger tabellen
+    if ($conn->query("DELETE FROM Bruger WHERE Unilogin = '$unilogin'")) {
+        $success_msg = "Bruger slettet succesfuldt!";
+    } else {
+        $error_msg = "Fejl ved sletning: " . $conn->error;
+    }
+}
+
+// Årets afslutning funktion
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aret_omme"])) {
     // Slet elever der går ud af skolen (Klasse_id 3, 6, 9)
-    $stmt_delete = $conn->prepare("DELETE FROM Bruger WHERE Level = 0 AND Klasse_id IN (3, 6, 9)");
-    $stmt_delete->execute();
+    $conn->query("DELETE FROM Bruger WHERE Level = 0 AND Klasse_id IN (3, 6, 9)");
 
     // Opdater de alle andre elever
-    $stmt_update = $conn->prepare("UPDATE Bruger SET Klasse_id = Klasse_id + 1 WHERE Level = 0 AND Klasse_id NOT IN (3, 6, 9)");
-    $stmt_update->execute();
+    $conn->query("UPDATE Bruger SET Klasse_id = Klasse_id + 1 WHERE Level = 0 AND Klasse_id NOT IN (3, 6, 9)");
 
-    echo "Klasser opdateret! Elever i sidste årgang er blevet slettet.";
+    $success_msg = "Klasser opdateret! Elever i sidste årgang er blevet slettet.";
 }
+
+// Hent brugere
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["hent_brugere"])) {
-    // Forbered SQL-forespørgsel for at hente brugerdata og tilhørende lærerinfo
-    $stmt = $conn->prepare("
-        SELECT Bruger.Unilogin AS Bruger_Unilogin, Bruger.Navn AS Bruger_Navn, Bruger.Level, Bruger.Klasse_id, 
-               Laerer_info.Klasse_id AS Laerer_Klasse_id, Laerer_info.Fag_id, Laerer_info.Laerer_Unilogin
-        FROM Bruger
-        LEFT JOIN Laerer_info ON Bruger.Unilogin = Laerer_info.Laerer_Unilogin
-        ORDER BY Bruger.Navn, Laerer_info.Klasse_id, Laerer_info.Fag_id
-    ");
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    echo "<h2>Brugerliste</h2><ul>";
-    
-    // Array til at gemme lærere og deres kombinationer
-    $laerere = [];
-    
-    // Hent alle brugere
-    while ($row = $result->fetch_assoc()) {
-        $unilogin = htmlspecialchars($row['Bruger_Unilogin']);
-        $navn = htmlspecialchars($row['Bruger_Navn']);
-        
-        // Hvis bruger er elev
-        if ($row['Level'] == 0) {
-            $klasse = isset($row['Klasse_id']) ? $row['Klasse_id'] : "Ingen klasse";
-            echo "<li>" . $navn . " (Elev, Unilogin: " . $unilogin . ", Klasse: " . $klasse . ")</li>";
-        } 
-        // Hvis bruger er lærer
-        else {
-            $laerer_unilogin = isset($row['Laerer_Unilogin']) ? $row['Laerer_Unilogin'] : "Ingen Unilogin";
-            $klasse = isset($row['Laerer_Klasse_id']) ? $row['Laerer_Klasse_id'] : "Ingen klasse";
-            $fag = isset($row['Fag_id']) ? $row['Fag_id'] : "Ingen fag";
-            
-            // Gem kombinationer for læreren
-            if (!isset($laerere[$unilogin])) {
-                $laerere[$unilogin] = [
-                    'navn' => $navn,
-                    'unilogin' => $laerer_unilogin,
-                    'kombinationer' => []
-                ];
-            }
-            
-            if ($klasse !== "Ingen klasse" && $fag !== "Ingen fag") {
-                $laerere[$unilogin]['kombinationer'][] = "(Klasse: $klasse Fag: $fag)";
-            }
-        }
-    }
-    
-    // Udskriv lærerne med alle deres kombinationer
-    foreach ($laerere as $laerer) {
-        $kombinationer = !empty($laerer['kombinationer']) ? 
-                         implode(", ", $laerer['kombinationer']) : 
-                         "Ingen tilknyttede klasser/fag";
-        
-        echo "<li>" . $laerer['navn'] . " (Lærer, Unilogin: " . $laerer['unilogin'] . ", " . $kombinationer . ")</li>";
-    }
-    
-    echo "</ul>";
+    $brugere = $conn->query("
+        SELECT b.Unilogin, b.Navn, b.Level, b.Klasse_id, 
+               GROUP_CONCAT(DISTINCT CONCAT('Klasse ', li.Klasse_id, ': ', f.Fag_navn) SEPARATOR ', ') AS laerer_info
+        FROM Bruger b
+        LEFT JOIN Laerer_info li ON b.Unilogin = li.Laerer_Unilogin
+        LEFT JOIN Fag f ON li.Fag_id = f.Fag_id
+        GROUP BY b.Unilogin
+        ORDER BY b.Level DESC, b.Navn
+    ")->fetch_all(MYSQLI_ASSOC);
 }
 
-
-
-
+// Opret bruger
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
-    $unilogin = $_POST["bruger_unilogin"];
+    $unilogin = $conn->real_escape_string($_POST["bruger_unilogin"]);
     $password = sha1($_POST["bruger_password"]);
-    $navn = $_POST["bruger_navn"];
-    $level = $_POST["bruger_level"];
-    
-    $klasse_id = null;
+    $navn = $conn->real_escape_string($_POST["bruger_navn"]);
+    $level = (int)$_POST["bruger_level"];
+    $klasse_id = ($level === 0) ? (int)$_POST["Klasse_id"] : null;
 
-    $stmt = $conn->prepare("INSERT INTO Bruger (Unilogin, Password, Navn, Klasse_id, Level) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssii", $unilogin, $password, $navn, $klasse_id, $level);
-    if ($stmt->execute()) {
-        echo "Bruger oprettet!";
-    } else {
-        echo "Fejl: " . $stmt->error;
-    }
-    
-    if ($level == 1) {
-        if (!empty($_POST["laerer_klasse"]) && !empty($_POST["laerer_fag"])) {
-            foreach ($_POST["laerer_klasse"] as $index => $klasse_id) {
-                if (!empty($_POST["laerer_fag"][$index])) {
-                    foreach ($_POST["laerer_fag"][$index] as $fag_id) {
-                        $stmt2 = $conn->prepare("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) VALUES (?, ?, ?)");
-                        $stmt2->bind_param("sii", $unilogin, $klasse_id, $fag_id);
-                        $stmt2->execute();
-                    }
+    // Opret bruger
+    $conn->query("INSERT INTO Bruger (Unilogin, Password, Navn, Klasse_id, Level) 
+                 VALUES ('$unilogin', '$password', '$navn', $klasse_id, $level)");
+
+    // Tilføj lærerinfo hvis det er en lærer
+    if ($level === 1 && !empty($_POST["laerer_klasse"])) {
+        foreach ($_POST["laerer_klasse"] as $index => $klasse) {
+            if (!empty($_POST["laerer_fag"][$index])) {
+                foreach ($_POST["laerer_fag"][$index] as $fag_id) {
+                    $conn->query("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) 
+                                VALUES ('$unilogin', $klasse, $fag_id)");
                 }
             }
         }
-        echo "L&aelig;rer-info tilf&oslash;jet!";
-    } else if ($level == 0) {
-        $klasse_id = $_POST["Klasse_id"];
-        $stmt3 = $conn->prepare("UPDATE Bruger SET Klasse_id = ? WHERE Unilogin = ?");
-        $stmt3->bind_param("is", $klasse_id, $unilogin);
-        $stmt3->execute();
     }
+
+    $success_msg = "Bruger oprettet succesfuldt!";
 }
 ?>
 
@@ -120,6 +74,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
 <html>
 <head>
     <title>Admin Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        .btn { padding: 5px 10px; text-decoration: none; border-radius: 3px; }
+        .btn-danger { background-color: #dc3545; color: white; }
+    </style>
     <script>
         function toggleFields() {
             var level = document.getElementById("bruger_level").value;
@@ -132,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
             let newPair = document.createElement("div");
             newPair.classList.add("class_subject_pair");
             newPair.innerHTML = `
-                <label>V&aelig;lg Klasse:</label>
+                <label>Vælg Klasse:</label>
                 <select name="laerer_klasse[]">
                     <option value="1">1.A</option>
                     <option value="2">2.A</option>
@@ -145,28 +110,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                     <option value="9">3.C</option>
                 </select>
 
-                <label>V&aelig;lg Fag:</label>
+                <label>Vælg Fag:</label>
                 <select name="laerer_fag[][]" multiple>
-                     <option value="1">Dansk</option>
-                        <option value="2">Engelsk</option>
-                        <option value="3">Matematik</option>
-                        <option value="4">Samfundsfag</option>
-                        <option value="5">Historie</option>
-                        <option value="6">Kemi</option>
-                        <option value="7">Fysik</option>
-                        <option value="8">Idræt</option>
-                        <option value="9">Biologi</option>
-                        <option value="10">Musik</option>
+                    <option value="1">Dansk</option>
+                    <option value="2">Engelsk</option>
+                    <option value="3">Matematik</option>
+                    <option value="4">Samfundsfag</option>
+                    <option value="5">Historie</option>
+                    <option value="6">Kemi</option>
+                    <option value="7">Fysik</option>
+                    <option value="8">Idræt</option>
+                    <option value="9">Biologi</option>
+                    <option value="10">Musik</option>
                 </select>
 
                 <button type="button" onclick="this.parentElement.remove()">Fjern</button>
             `;
             container.appendChild(newPair);
         }
+
+        function confirmDelete(unilogin, navn) {
+            return confirm('Er du sikker på at du vil slette ' + navn + ' (Unilogin: ' + unilogin + ')?');
+        }
     </script>
 </head>
 <body onload="toggleFields()">
     <h1>Admin Panel</h1>
+    
+    <?php if (!empty($success_msg)): ?>
+        <div class="message success"><?= $success_msg ?></div>
+    <?php endif; ?>
+    
+    <?php if (!empty($error_msg)): ?>
+        <div class="message error"><?= $error_msg ?></div>
+    <?php endif; ?>
     
     <h2>Opret Bruger</h2>
     <form method="POST">
@@ -176,7 +153,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         <label>Level:</label>
         <select name="bruger_level" id="bruger_level" onchange="toggleFields()" required>
             <option value="0">Elev</option>
-            <option value="1">L&aelig;rer</option>
+            <option value="1">Lærer</option>
             <option value="2">Administrator</option>
         </select>
         
@@ -192,34 +169,76 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                 <option value="7">1.C</option>
                 <option value="8">2.C</option>
                 <option value="9">3.C</option>
-
             </select> 
         </div>
 
         <div id="laerer_fields" style="display: none;">
-            <h3>L&aelig;rer Information</h3>
+            <h3>Lærer Information</h3>
             <div id="class_subjects_container"></div>
-            <button type="button" onclick="addClassSubjectPair()">Tilf&oslash;j flere</button>
+            <button type="button" onclick="addClassSubjectPair()">Tilføj flere</button>
         </div>
 
         <button type="submit" name="opret_bruger">Opret Bruger</button>
     </form>
 
-        <h2>Året er omme</h2>
+    <h2>Året er omme</h2>
     <form method="POST">
         <button type="submit" name="aret_omme">Opdater Klasser</button>
-        </form>
+    </form>
 
-        <h2>Brugere</h2>
-     <form method="POST">
-   <button type="submit" name="hent_brugere">Vis Brugere</button>
-</form>
+    <h2>Brugere</h2>
+    <form method="POST">
+        <button type="submit" name="hent_brugere">Vis Brugere</button>
+    </form>
 
+    <?php if (!empty($brugere)): ?>
+        <h3>Brugerliste</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Navn</th>
+                    <th>Unilogin</th>
+                    <th>Rolle</th>
+                    <th>Tilknytning</th>
+                    <th>Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($brugere as $bruger): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($bruger['Navn']) ?></td>
+                        <td><?= htmlspecialchars($bruger['Unilogin']) ?></td>
+                        <td>
+                            <?php 
+                            // Erstat match-udtrykket med en switch-sætning
+                            switch($bruger['Level']) {
+                                case 0: echo 'Elev'; break;
+                                case 1: echo 'Lærer'; break;
+                                case 2: echo 'Admin'; break;
+                                default: echo 'Ukendt';
+                            }
+                            ?>
+                        </td>
+                        <td>
+                            <?= $bruger['Level'] == 0 
+                                ? 'Klasse: ' . $bruger['Klasse_id'] 
+                                : ($bruger['laerer_info'] ?? 'Ingen tilknytning') ?>
+                        </td>
+                        <td>
+                            <form method="POST" style="display:inline;" 
+                                  onsubmit="return confirmDelete('<?= $bruger['Unilogin'] ?>', '<?= $bruger['Navn'] ?>')">
+                                <input type="hidden" name="unilogin" value="<?= $bruger['Unilogin'] ?>">
+                                <button type="submit" name="slet_bruger" class="btn btn-danger">Slet</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
 
-  <a href="index.php">
+    <a href="index.php">
         <button>Gå tilbage</button>
-
-
-
+    </a>
 </body>
 </html>

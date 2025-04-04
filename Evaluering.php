@@ -51,8 +51,32 @@ if (isset($_GET['elev_afl_id'])) {
 } elseif (isset($_GET['oprettet_afl_id']) && $is_teacher) {
     // Vis alle afleveringer til en opgave (kun for lærere)
     $oprettet_afl_id = intval($_GET['oprettet_afl_id']);
+    
+    // Først hent opgaveinfo for at tjekke om læreren har adgang
+    $stmt = $conn->prepare("
+        SELECT o.*, f.Fag_navn 
+        FROM Oprettet_Aflevering o
+        JOIN Fag f ON o.Fag_id = f.Fag_id
+        WHERE o.Oprettet_Afl_id = ? 
+        AND EXISTS (
+            SELECT 1 FROM Laerer_info 
+            WHERE Laerer_info.Laerer_Unilogin = ? 
+            AND Laerer_info.Klasse_id = o.Klasse_id
+            AND Laerer_info.Fag_id = o.Fag_id
+        )
+    ");
+    $stmt->bind_param("is", $oprettet_afl_id, $current_user);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $opgave = $result->fetch_assoc();
+    $stmt->close();
+    
+    if (!$opgave) {
+        die("Du har ikke adgang til denne opgave.");
+    }
+    
     $afleveringer = hentAfleveringerTilOpgave($conn, $oprettet_afl_id);
-    visAfleveringsListe($afleveringer, true);
+    visAfleveringsListe($afleveringer, true, $opgave);
     
 } else {
     // Standardvisning
@@ -96,27 +120,73 @@ function hentAflevering($conn, $elev_afl_id, $current_user, $is_teacher) {
 }
 
 function hentAfleveringerTilOpgave($conn, $oprettet_afl_id) {
+    // Først: Hent alle elever i klassen der skal aflevere
     $stmt = $conn->prepare("
-        SELECT ea.Elev_Afl_id, ea.Elev_Afl_tid, b.Navn AS Elev_navn, 
-               k.Klasse_navn, ev.Evaluering_id, o.Oprettet_Afl_navn
-        FROM Elev_Aflevering ea
-        JOIN Bruger b ON ea.Unilogin = b.Unilogin
+        SELECT b.Unilogin, b.Navn AS Elev_navn, k.Klasse_navn
+        FROM Bruger b
         JOIN Klasse k ON b.Klasse_id = k.Klasse_id
-        JOIN Oprettet_Aflevering o ON ea.Oprettet_Afl_id = o.Oprettet_Afl_id
-        LEFT JOIN Evaluering ev ON ea.Elev_Afl_id = ev.Elev_Afl_id
-        WHERE ea.Oprettet_Afl_id = ?
-        ORDER BY ea.Elev_Afl_tid DESC
+        JOIN Oprettet_Aflevering o ON b.Klasse_id = o.Klasse_id
+        WHERE o.Oprettet_Afl_id = ? AND b.Level = 0
+        ORDER BY b.Navn
     ");
     $stmt->bind_param("i", $oprettet_afl_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->fetch_all(MYSQLI_ASSOC);
+    $alle_elever = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    
+    // Så: Hent alle afleveringer for denne opgave
+    $stmt = $conn->prepare("
+        SELECT ea.Elev_Afl_id, ea.Unilogin, ea.Elev_Afl_tid, 
+               b.Navn AS Elev_navn, k.Klasse_navn, ev.Evaluering_id, 
+               ev.Evaluering_karakter
+        FROM Elev_Aflevering ea
+        JOIN Bruger b ON ea.Unilogin = b.Unilogin
+        JOIN Klasse k ON b.Klasse_id = k.Klasse_id
+        LEFT JOIN Evaluering ev ON ea.Elev_Afl_id = ev.Elev_Afl_id
+        WHERE ea.Oprettet_Afl_id = ?
+        ORDER BY b.Navn
+    ");
+    $stmt->bind_param("i", $oprettet_afl_id);
+    $stmt->execute();
+    $afleveringer = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    
+    // Kombiner data for at vise alle elever med status
+    $result = [];
+    foreach ($alle_elever as $elev) {
+        $elev_data = [
+            'Unilogin' => $elev['Unilogin'],
+            'Elev_navn' => $elev['Elev_navn'],
+            'Klasse_navn' => $elev['Klasse_navn'],
+            'Status' => 'Mangler at aflevere',
+            'Elev_Afl_id' => null,
+            'Elev_Afl_tid' => null,
+            'Evaluering_id' => null,
+            'Evaluering_karakter' => null
+        ];
+        
+        foreach ($afleveringer as $afl) {
+            if ($afl['Unilogin'] == $elev['Unilogin']) {
+                $elev_data['Status'] = $afl['Evaluering_id'] ? 'Evalueret' : 'Afleveret';
+                $elev_data['Elev_Afl_id'] = $afl['Elev_Afl_id'];
+                $elev_data['Elev_Afl_tid'] = $afl['Elev_Afl_tid'];
+                $elev_data['Evaluering_id'] = $afl['Evaluering_id'];
+                $elev_data['Evaluering_karakter'] = $afl['Evaluering_karakter'];
+                break;
+            }
+        }
+        
+        $result[] = $elev_data;
+    }
+    
+    return $result;
 }
 
 function hentAfleveringerManglerEvaluering($conn) {
     $stmt = $conn->prepare("
         SELECT ea.Elev_Afl_id, o.Oprettet_Afl_navn, ea.Elev_Afl_tid, 
-               b.Navn AS Elev_navn, k.Klasse_navn, f.Fag_navn
+               b.Navn AS Elev_navn, k.Klasse_navn, f.Fag_navn,
+               o.Oprettet_Afl_id
         FROM Elev_Aflevering ea
         JOIN Oprettet_Aflevering o ON ea.Oprettet_Afl_id = o.Oprettet_Afl_id
         JOIN Bruger b ON ea.Unilogin = b.Unilogin
@@ -135,7 +205,7 @@ function hentMineAfleveringer($conn, $current_user) {
     $stmt = $conn->prepare("
         SELECT ea.Elev_Afl_id, o.Oprettet_Afl_navn, ea.Elev_Afl_tid, 
                f.Fag_navn, ev.Evaluering_karakter, ev.Feedback,
-               ev.Filpath AS Feedback_fil
+               ev.Filpath AS Feedback_fil, o.Oprettet_Afl_id
         FROM Elev_Aflevering ea
         JOIN Oprettet_Aflevering o ON ea.Oprettet_Afl_id = o.Oprettet_Afl_id
         JOIN Fag f ON o.Fag_id = f.Fag_id
@@ -149,9 +219,14 @@ function hentMineAfleveringer($conn, $current_user) {
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
-function visAfleveringsListe($afleveringer, $is_teacher) {
+function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null) {
     if ($is_teacher) {
-        echo "<h2>Afleveringer der venter på evaluering</h2>";
+        if (isset($_GET['oprettet_afl_id']) && $opgave) {
+            echo "<h2>Afleveringsstatus for: " . htmlspecialchars($opgave['Oprettet_Afl_navn']) . "</h2>";
+            echo "<p>Fag: " . htmlspecialchars($opgave['Fag_navn']) . " | Klasse: " . htmlspecialchars($opgave['Klasse_id']) . "</p>";
+        } else {
+            echo "<h2>Afleveringer der venter på evaluering</h2>";
+        }
     } else {
         echo "<h2>Mine afleveringer</h2>";
     }
@@ -161,50 +236,104 @@ function visAfleveringsListe($afleveringer, $is_teacher) {
         return;
     }
     
-    echo "<table border='1'>";
+    echo "<table border='1' style='width:100%; border-collapse:collapse; margin-top:20px;'>";
     
     if ($is_teacher) {
-        echo "<tr><th>Elev</th><th>Klasse</th><th>Opgave</th><th>Afleveret</th><th>Handling</th></tr>";
-    } else {
-        echo "<tr><th>Opgave</th><th>Fag</th><th>Afleveret</th><th>Status</th><th>Handling</th></tr>";
-    }
-    
-    foreach ($afleveringer as $afl) {
-        echo "<tr>";
-        
-        if ($is_teacher) {
-            echo "<td>" . htmlspecialchars($afl['Elev_navn']) . "</td>";
-            echo "<td>" . htmlspecialchars($afl['Klasse_navn']) . "</td>";
-        }
-        
-        echo "<td>" . htmlspecialchars($afl['Oprettet_Afl_navn'] ?? 'Opgave #' . $afl['Oprettet_Afl_id']) . "</td>";
-        
-        if (!$is_teacher) {
-            echo "<td>" . htmlspecialchars($afl['Fag_navn']) . "</td>";
-        }
-        
-        echo "<td>" . htmlspecialchars($afl['Elev_Afl_tid']) . "</td>";
-        
-        if ($is_teacher) {
-            if (isset($afl['Evaluering_id'])) {
-                echo "<td>Allerede evalueret</td>";
-            } else {
-                echo "<td><a href='Evaluering.php?elev_afl_id=" . $afl['Elev_Afl_id'] . "'>Giv feedback</a></td>";
+        if (isset($_GET['oprettet_afl_id'])) {
+            // Ny visning for lærere - viser alle elever
+            echo "<tr>
+                    <th style='padding:8px;'>Elev</th>
+                    <th style='padding:8px;'>Klasse</th>
+                    <th style='padding:8px;'>Status</th>
+                    <th style='padding:8px;'>Afleveret</th>
+                    <th style='padding:8px;'>Karakter</th>
+                    <th style='padding:8px;'>Handling</th>
+                  </tr>";
+            
+            foreach ($afleveringer as $afl) {
+                $status_class = '';
+                if ($afl['Status'] === 'Mangler at aflevere') {
+                    $status_class = 'mangler';
+                } elseif ($afl['Status'] === 'Afleveret') {
+                    $status_class = 'afleveret';
+                } elseif ($afl['Status'] === 'Evalueret') {
+                    $status_class = 'evalueret';
+                }
+                
+                echo "<tr class='$status_class'>";
+                echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Elev_navn']) . "</td>";
+                echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Klasse_navn']) . "</td>";
+                echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Status']) . "</td>";
+                echo "<td style='padding:8px;'>" . ($afl['Elev_Afl_tid'] ? htmlspecialchars($afl['Elev_Afl_tid']) : '-') . "</td>";
+                echo "<td style='padding:8px;'>" . ($afl['Evaluering_karakter'] ? htmlspecialchars($afl['Evaluering_karakter']) : '-') . "</td>";
+                
+                if ($afl['Status'] === 'Afleveret') {
+                    echo "<td style='padding:8px;'><a href='Evaluering.php?elev_afl_id=" . $afl['Elev_Afl_id'] . "'>Giv feedback</a></td>";
+                } elseif ($afl['Status'] === 'Evalueret') {
+                    echo "<td style='padding:8px;'><a href='Evaluering.php?elev_afl_id=" . $afl['Elev_Afl_id'] . "'>Se feedback</a></td>";
+                } else {
+                    echo "<td style='padding:8px;'>-</td>";
+                }
+                
+                echo "</tr>";
             }
         } else {
-            if (isset($afl['Evaluering_karakter'])) {
-                echo "<td>Evalueret (" . htmlspecialchars($afl['Evaluering_karakter']) . ")</td>";
-                echo "<td><a href='Evaluering.php?elev_afl_id=" . $afl['Elev_Afl_id'] . "'>Se detaljer</a></td>";
-            } else {
-                echo "<td>Afventer evaluering</td>";
-                echo "<td>ikke rettet</td>";
+            // Eksisterende visning for afleveringer der mangler evaluering
+            echo "<tr>
+                    <th style='padding:8px;'>Elev</th>
+                    <th style='padding:8px;'>Klasse</th>
+                    <th style='padding:8px;'>Opgave</th>
+                    <th style='padding:8px;'>Afleveret</th>
+                    <th style='padding:8px;'>Handling</th>
+                  </tr>";
+            
+            foreach ($afleveringer as $afl) {
+                echo "<tr>";
+                echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Elev_navn']) . "</td>";
+                echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Klasse_navn']) . "</td>";
+                echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Oprettet_Afl_navn']) . "</td>";
+                echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Elev_Afl_tid']) . "</td>";
+                echo "<td style='padding:8px;'><a href='Evaluering.php?elev_afl_id=" . $afl['Elev_Afl_id'] . "'>Giv feedback</a></td>";
+                echo "</tr>";
             }
         }
+    } else {
+        // Eksisterende visning for elever
+        echo "<tr>
+                <th style='padding:8px;'>Opgave</th>
+                <th style='padding:8px;'>Fag</th>
+                <th style='padding:8px;'>Afleveret</th>
+                <th style='padding:8px;'>Status</th>
+                <th style='padding:8px;'>Handling</th>
+              </tr>";
         
-        echo "</tr>";
+        foreach ($afleveringer as $afl) {
+            echo "<tr>";
+            echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Oprettet_Afl_navn']) . "</td>";
+            echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Fag_navn']) . "</td>";
+            echo "<td style='padding:8px;'>" . htmlspecialchars($afl['Elev_Afl_tid']) . "</td>";
+            
+            if (isset($afl['Evaluering_karakter'])) {
+                echo "<td style='padding:8px;'>Evalueret (" . htmlspecialchars($afl['Evaluering_karakter']) . ")</td>";
+                echo "<td style='padding:8px;'><a href='Evaluering.php?elev_afl_id=" . $afl['Elev_Afl_id'] . "'>Se detaljer</a></td>";
+            } else {
+                echo "<td style='padding:8px;'>Afventer evaluering</td>";
+                echo "<td style='padding:8px;'>-</td>";
+            }
+            
+            echo "</tr>";
+        }
     }
     
     echo "</table>";
+    
+    if ($is_teacher && isset($_GET['oprettet_afl_id'])) {
+        echo "<p><a href='Evaluering.php'>Tilbage til alle afleveringer</a></p>";
+    } elseif ($is_teacher) {
+        echo "<p><a href='index.php'>Tilbage</a></p>";
+    } else {
+        echo "<p><a href='index.php'>Tilbage</a></p>";
+    }
 }
 
 function visFeedbackFormular($aflevering) {
@@ -261,6 +390,7 @@ function visFeedbackFormular($aflevering) {
                 <button type="submit" name="submit_feedback">Gem feedback</button>
             </form>
         </div>
+        <p><a href="Evaluering.php?oprettet_afl_id=<?= $aflevering['Oprettet_Afl_id'] ?>">Tilbage til afleveringsoversigt</a></p>
     </body>
     </html>
     <?php
@@ -309,7 +439,7 @@ function visElevAflevering($aflevering) {
                 <p>Denne aflevering er endnu ikke blevet evalueret.</p>
             <?php endif; ?>
             
-            <p><a href="tidligere_afleveringer.php">Tilbage til mine afleveringer</a></p>
+            <p><a href="Evaluering.php">Tilbage til mine afleveringer</a></p>
         </div>
     </body>
     </html>
@@ -345,17 +475,19 @@ function gemFeedback($conn) {
     $stmt->bind_param("isss", $elev_afl_id, $karakter, $feedback, $filpath);
     
     if ($stmt->execute()) {
-        echo "<p style='color: green;'>Feedback gemt succesfuldt!</p>";
+        // Hent oprettet_afl_id for at kunne returnere til oversigten
+        $stmt = $conn->prepare("SELECT Oprettet_Afl_id FROM Elev_Aflevering WHERE Elev_Afl_id = ?");
+        $stmt->bind_param("i", $elev_afl_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $oprettet_afl_id = $row['Oprettet_Afl_id'];
+        $stmt->close();
+        
+        header("Location: Evaluering.php?oprettet_afl_id=" . $oprettet_afl_id);
+        exit();
     } else {
         echo "<p style='color: red;'>Fejl: " . $conn->error . "</p>";
     }
 }
 ?>
-<!DOCTYPE html>
-<html>
-<body>
-
-   <a href="index.php">Tilbage</a>
-
-</body>
-</html>
