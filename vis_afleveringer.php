@@ -11,7 +11,7 @@ $unilogin = $_SESSION["unilogin"];
 $is_teacher = false;
 
 // Hent brugerinfo
-$stmt = $conn->prepare("SELECT Level FROM Bruger WHERE Unilogin = ?");
+$stmt = $conn->prepare("SELECT Level, Klasse_id FROM Bruger WHERE Unilogin = ?");
 $stmt->bind_param("s", $unilogin);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
@@ -20,6 +20,7 @@ $stmt->close();
 if (!$user) die("Bruger ikke fundet");
 
 $is_teacher = ($user['Level'] == 1);
+$klasse_id = $user['Klasse_id'];
 
 if ($is_teacher) {
     // Hent lærerens afleveringer med antal afleveringer
@@ -51,6 +52,33 @@ if ($is_teacher) {
     $stmt->execute();
     $afleveringer = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
+} else {
+    // Hent afleveringer for elevens klasse hvor de ikke har afleveret endnu
+    $stmt = $conn->prepare("
+        SELECT 
+            o.Oprettet_Afl_id,
+            o.Oprettet_Afl_navn,
+            o.Oprettet_Afl_deadline,
+            o.Klasse_id,
+            f.Fag_navn
+        FROM 
+            Oprettet_Aflevering o
+        JOIN 
+            Fag f ON o.Fag_id = f.Fag_id
+        WHERE 
+            o.Klasse_id = ?
+            AND NOT EXISTS (
+                SELECT 1 FROM Elev_Aflevering ea 
+                WHERE ea.Oprettet_Afl_id = o.Oprettet_Afl_id 
+                AND ea.Unilogin = ?
+            )
+        ORDER BY 
+            o.Oprettet_Afl_deadline DESC
+    ");
+    $stmt->bind_param("is", $klasse_id, $unilogin);
+    $stmt->execute();
+    $afleveringer = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 }
 $conn->close();
 ?>
@@ -59,7 +87,7 @@ $conn->close();
 <html lang="da">
 <head>
     <meta charset="UTF-8">
-    <title>Lærers afleveringsoversigt</title>
+    <title><?php echo $is_teacher ? 'Lærers' : 'Elevens'; ?> afleveringsoversigt</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -108,6 +136,16 @@ $conn->close();
             color: white;
             line-height: 20px;
         }
+        .aflever-knap {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .aflever-knap:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
@@ -143,37 +181,43 @@ $conn->close();
                         $deadline_class = 'deadline-ok';
                         $status_text = 'Aktiv (' . $days_left . ' dage tilbage)';
                     }
-                    
-                    $progress = $aflevering['antal_elever'] > 0 
-                        ? round(($aflevering['antal_afleveret'] / $aflevering['antal_elever']) * 100) 
-                        : 0;
                 ?>
                 <tr>
-                    <td><?= htmlspecialchars($aflevering['Oprettet_Afl_navn']) ?></td>
-                    <td><?= htmlspecialchars($aflevering['Fag_navn']) ?></td>
-                    <td><?= htmlspecialchars($aflevering['Klasse_id']) ?></td>
-                    <td class="<?= $deadline_class ?>">
-                        <?= $deadline->format('d/m/Y H:i') ?>
-                        <br><small><?= $status_text ?></small>
+                    <td><?php echo htmlspecialchars($aflevering['Oprettet_Afl_navn']); ?></td>
+                    <td><?php echo htmlspecialchars($aflevering['Fag_navn']); ?></td>
+                    <td><?php echo htmlspecialchars($aflevering['Klasse_id']); ?></td>
+                    <td class="<?php echo $deadline_class; ?>">
+                        <?php echo $deadline->format('d/m/Y H:i'); ?>
+                        <br><small><?php echo $status_text; ?></small>
                     </td>
                     <td>
-                        <div class="progress-container">
-                            <div class="progress-bar" style="width:<?= $progress ?>%">
-                                <?= $aflevering['antal_afleveret'] ?>/<?= $aflevering['antal_elever'] ?>
+                        <?php if ($is_teacher): ?>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width:<?php echo $progress; ?>%">
+                                    <?php echo $aflevering['antal_afleveret']; ?>/<?php echo $aflevering['antal_elever']; ?>
+                                </div>
                             </div>
-                        </div>
+                        <?php else: ?>
+                            Ikke afleveret
+                        <?php endif; ?>
                     </td>
                     <td>
-                        <a href="Evaluering.php?oprettet_afl_id=<?= $aflevering['Oprettet_Afl_id'] ?>">
-                            Se detaljer 
-                        </a>
+                        <?php if ($is_teacher): ?>
+                            <a href="Evaluering.php?oprettet_afl_id=<?php echo $aflevering['Oprettet_Afl_id']; ?>">
+                                Se detaljer 
+                            </a>
+                        <?php else: ?>
+                            <a href="Afleveringer.php?oprettet_afl_id=<?php echo $aflevering['Oprettet_Afl_id']; ?>" class="aflever-knap">
+                                Aflever nu
+                            </a>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     <?php else: ?>
-        <p>Du har ikke oprettet nogen afleveringer endnu.</p>
+        <p><?php echo $is_teacher ? 'Du har ikke oprettet nogen afleveringer endnu.' : 'Du har ingen afleveringer at aflevere i øjeblikket.'; ?></p>
     <?php endif; ?>
 </body>
 </html>

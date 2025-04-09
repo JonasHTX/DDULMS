@@ -20,13 +20,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["slet_bruger"])) {
 
 // Årets afslutning funktion
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aret_omme"])) {
-    // Slet elever der går ud af skolen (Klasse_id 3, 6, 9)
-    $conn->query("DELETE FROM Bruger WHERE Level = 0 AND Klasse_id IN (3, 6, 9)");
-
-    // Opdater de alle andre elever
-    $conn->query("UPDATE Bruger SET Klasse_id = Klasse_id + 1 WHERE Level = 0 AND Klasse_id NOT IN (3, 6, 9)");
-
-    $success_msg = "Klasser opdateret! Elever i sidste årgang er blevet slettet.";
+    // Start transaction for at sikre data integritet
+    $conn->begin_transaction();
+    
+    try {
+        // 1. Slet alle elevafleveringer og tilhørende evalueringer
+        $conn->query("DELETE FROM Evaluering");
+        $conn->query("DELETE FROM Elev_Aflevering");
+        
+        // 2. Slet alle oprettede afleveringer
+        $conn->query("DELETE FROM Oprettet_Aflevering");
+        
+        // 3. Slet elever der går ud af skolen (Klasse_id 3, 6, 9)
+        $conn->query("DELETE FROM Bruger WHERE Level = 0 AND Klasse_id IN (3, 6, 9)");
+        
+        // 4. Opdater de alle andre elever
+        $conn->query("UPDATE Bruger SET Klasse_id = Klasse_id + 1 WHERE Level = 0 AND Klasse_id NOT IN (3, 6, 9)");
+        
+        // Commit ændringerne
+        $conn->commit();
+        
+        $success_msg = "Klasser opdateret! Alle afleveringer er blevet slettet og elever i sidste årgang er blevet fjernet.";
+    } catch (Exception $e) {
+        // Rollback ved fejl
+        $conn->rollback();
+        $error_msg = "Fejl under årsskifte: " . $e->getMessage();
+    }
 }
 
 // Hent brugere
@@ -84,6 +103,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         th { background-color: #f2f2f2; }
         .btn { padding: 5px 10px; text-decoration: none; border-radius: 3px; }
         .btn-danger { background-color: #dc3545; color: white; }
+        .warning-box { 
+            background-color: #fff3cd; 
+            color: #856404; 
+            padding: 15px; 
+            margin: 20px 0; 
+            border-left: 5px solid #ffeeba;
+        }
     </style>
     <script>
         function toggleFields() {
@@ -131,6 +157,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
 
         function confirmDelete(unilogin, navn) {
             return confirm('Er du sikker på at du vil slette ' + navn + ' (Unilogin: ' + unilogin + ')?');
+        }
+        
+        function confirmYearEnd() {
+            return confirm('ADVARSEL: Dette vil slette ALLE afleveringer og evalueringer, samt opdatere elevernes klasser. Er du sikker på at du vil fortsætte?');
         }
     </script>
 </head>
@@ -182,8 +212,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
     </form>
 
     <h2>Året er omme</h2>
-    <form method="POST">
-        <button type="submit" name="aret_omme">Opdater Klasser</button>
+    <div class="warning-box">
+        <strong>ADVARSEL:</strong> Denne handling kan ikke fortrydes! Den vil:
+        <ul>
+            <li>Slette alle elever i 3.A, 3.B og 3.C</li>
+            <li>Opdatere alle andre elevers klassetrin (1.A -> 2.A, 2.A -> 3.A osv.)</li>
+            <li>Slette ALLE afleveringer, evalueringer og oprettede afleveringer</li>
+        </ul>
+    </div>
+    <form method="POST" onsubmit="return confirmYearEnd()">
+        <button type="submit" name="aret_omme">Udfør årsskifte</button>
     </form>
 
     <h2>Brugere</h2>
@@ -210,7 +248,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                         <td><?= htmlspecialchars($bruger['Unilogin']) ?></td>
                         <td>
                             <?php 
-                            // Erstat match-udtrykket med en switch-sætning
                             switch($bruger['Level']) {
                                 case 0: echo 'Elev'; break;
                                 case 1: echo 'Lærer'; break;

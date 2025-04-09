@@ -6,10 +6,17 @@ include 'connection.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Tjek om filen inkluderes eller åbnes direkte
+$is_included = (strpos($_SERVER['PHP_SELF'], 'Evaluering.php') === false);
+
 // Tjek login
 if (!isset($_SESSION['unilogin'])) {
-    header("Location: login.php");
-    exit();
+    if ($is_included) {
+        die(); // Silent fail hvis inkluderet uden session
+    } else {
+        header("Location: login.php");
+        exit();
+    }
 }
 
 // Hent brugerinfo
@@ -43,9 +50,9 @@ if (isset($_GET['elev_afl_id'])) {
     }
     
     if ($is_teacher) {
-        visFeedbackFormular($aflevering);
+        visFeedbackFormular($aflevering, $is_included);
     } else {
-        visElevAflevering($aflevering);
+        visElevAflevering($aflevering, $is_included);
     }
     
 } elseif (isset($_GET['oprettet_afl_id']) && $is_teacher) {
@@ -76,16 +83,16 @@ if (isset($_GET['elev_afl_id'])) {
     }
     
     $afleveringer = hentAfleveringerTilOpgave($conn, $oprettet_afl_id);
-    visAfleveringsListe($afleveringer, true, $opgave);
+    visAfleveringsListe($afleveringer, true, $opgave, $is_included);
     
 } else {
     // Standardvisning
     if ($is_teacher) {
         $afleveringer = hentAfleveringerManglerEvaluering($conn);
-        visAfleveringsListe($afleveringer, true);
+        visAfleveringsListe($afleveringer, true, null, $is_included);
     } else {
         $afleveringer = hentMineAfleveringer($conn, $current_user);
-        visAfleveringsListe($afleveringer, false);
+        visAfleveringsListe($afleveringer, false, null, $is_included);
     }
 }
 
@@ -219,7 +226,7 @@ function hentMineAfleveringer($conn, $current_user) {
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
-function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null) {
+function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null, $is_included = false) {
     if ($is_teacher) {
         if (isset($_GET['oprettet_afl_id']) && $opgave) {
             echo "<h2>Afleveringsstatus for: " . htmlspecialchars($opgave['Oprettet_Afl_navn']) . "</h2>";
@@ -327,16 +334,18 @@ function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null) {
     
     echo "</table>";
     
-    if ($is_teacher && isset($_GET['oprettet_afl_id'])) {
-        echo "<p><a href='Evaluering.php'>Tilbage til alle afleveringer</a></p>";
-    } elseif ($is_teacher) {
-        echo "<p><a href='index.php'>Tilbage</a></p>";
-    } else {
-        echo "<p><a href='index.php'>Tilbage</a></p>";
+    if (!$is_included) {
+        if ($is_teacher && isset($_GET['oprettet_afl_id'])) {
+            echo "<p><a href='Evaluering.php'>Tilbage til alle afleveringer</a></p>";
+        } elseif ($is_teacher) {
+            echo "<p><a href='index.php'>Tilbage</a></p>";
+        } else {
+            echo "<p><a href='index.php'>Tilbage</a></p>";
+        }
     }
 }
 
-function visFeedbackFormular($aflevering) {
+function visFeedbackFormular($aflevering, $is_included = false) {
     ?>
     <!DOCTYPE html>
     <html lang="da">
@@ -390,13 +399,15 @@ function visFeedbackFormular($aflevering) {
                 <button type="submit" name="submit_feedback">Gem feedback</button>
             </form>
         </div>
-        <p><a href="Evaluering.php?oprettet_afl_id=<?= $aflevering['Oprettet_Afl_id'] ?>">Tilbage til afleveringsoversigt</a></p>
+        <?php if (!$is_included): ?>
+            <p><a href="Evaluering.php?oprettet_afl_id=<?= $aflevering['Oprettet_Afl_id'] ?>">Tilbage til afleveringsoversigt</a></p>
+        <?php endif; ?>
     </body>
     </html>
     <?php
 }
 
-function visElevAflevering($aflevering) {
+function visElevAflevering($aflevering, $is_included = false) {
     ?>
     <!DOCTYPE html>
     <html lang="da">
@@ -439,7 +450,9 @@ function visElevAflevering($aflevering) {
                 <p>Denne aflevering er endnu ikke blevet evalueret.</p>
             <?php endif; ?>
             
-            <p><a href="Evaluering.php">Tilbage til mine afleveringer</a></p>
+            <?php if (!$is_included): ?>
+                <p><a href="index.php">Tilbage til Forside</a></p>
+            <?php endif; ?>
         </div>
     </body>
     </html>
