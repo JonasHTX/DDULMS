@@ -175,7 +175,5 @@ $conn->close();
     <?php else: ?>
         <p>Du har ikke oprettet nogen afleveringer endnu.</p>
     <?php endif; ?>
-
-    <p><a href="index.php"> Tilbage til forsiden</a></p>
 </body>
 </html>

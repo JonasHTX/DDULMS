@@ -35,19 +35,14 @@ $user_level = $user['Level'];
     <?php endif; ?>
 
     <!-- Kun vis Opret aflevering knappen hvis level = 1 (lærer) eller 2 (admin) -->
-    <?php if ($user_level == 1 || $user_level == 2): ?>
+    <?php include 'vis_afleveringer.php';
+    if ($user_level == 1 || $user_level == 2): ?>
         <a href="Opretaflevering.php">
             <button>Opret aflevering</button>
         </a>
-    <?php endif; ?>
-
-    <a href="vis_afleveringer.php">
-        <button>Vis afleveringer</button>
-    </a>
-
-    <a href="Evaluering.php">
-        <button>Evaluering</button>
-    </a>
+    <?php endif;
+    include 'Evaluering.php';
+    ?>
 
     <a href="logout.php">
         <button>Log ud</button>
