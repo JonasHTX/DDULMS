@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['signed_in'] = true;
             $_SESSION['user_name'] = $user['Navn'];
             $_SESSION['user_level'] = $user['Level'];
+            $_SESSION['unilogin'] = $user['Unilogin'];
             header("Location: index.php");
             exit();
         } else {
@@ -32,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html>

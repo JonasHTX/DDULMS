@@ -2,14 +2,16 @@
 session_start();
 include 'connection.php';
 
+
 // Tjekker om brugeren er logget ind
 if (!isset($_SESSION['signed_in']) || $_SESSION['signed_in'] !== true) {
     header("Location: Uni_bruger.php");
     exit();
 }
 
+
 // Hent brugerens level baseret på Unilogin
-$unilogin = $_SESSION['user_name']; // Brug Unilogin, som er gemt i sessionen
+$unilogin = $_SESSION['unilogin']; // Brug korrekt session-variabel
 $query = "SELECT Level FROM Bruger WHERE Unilogin = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("s", $unilogin);
@@ -35,14 +37,19 @@ $user_level = $user['Level'];
     <?php endif; ?>
 
     <!-- Kun vis Opret aflevering knappen hvis level = 1 (lærer) eller 2 (admin) -->
-    <?php include 'vis_afleveringer.php';
-    if ($user_level == 1 || $user_level == 2): ?>
-        <a href="Opretaflevering.php">
-            <button>Opret aflevering</button>
-        </a>
-    <?php endif;
-    include 'Evaluering.php';
-    ?>
+ <?php if ($user_level == 1 || $user_level == 2): ?>
+    <a href="Opretaflevering.php">
+        <button>Opret aflevering</button>
+    </a>
+<?php endif; ?>
+
+<?php include 'vis_afleveringer.php'; ?>
+
+ <?php if ($user_level == 0):
+ include 'Evaluering.php';
+    endif; ?>
+
+
 
     <a href="logout.php">
         <button>Log ud</button>
