@@ -9,6 +9,7 @@ if (!isset($_SESSION["unilogin"])) {
 
 $unilogin = $_SESSION["unilogin"];
 $is_teacher = false;
+$selected_fag = isset($_GET['fag']) ? intval($_GET['fag']) : 0; // Få det valgte fag fra URL
 
 // Hent brugerinfo
 $stmt = $conn->prepare("SELECT Level, Klasse_id FROM Bruger WHERE Unilogin = ?");
@@ -21,16 +22,44 @@ if (!$user) die("Bruger ikke fundet");
 
 $is_teacher = ($user['Level'] == 1);
 $klasse_id = $user['Klasse_id'];
+<<<<<<< HEAD
+=======
+
+// Hent alle relevante fag for brugeren (til knapperne)
+if ($is_teacher) {
+    $fag_query = $conn->prepare("
+        SELECT DISTINCT f.Fag_id, f.Fag_navn 
+        FROM Fag f
+        JOIN Laerer_info li ON f.Fag_id = li.Fag_id
+        WHERE li.Laerer_Unilogin = ?
+        ORDER BY f.Fag_navn
+    ");
+    $fag_query->bind_param("s", $unilogin);
+} else {
+    $fag_query = $conn->prepare("
+        SELECT DISTINCT f.Fag_id, f.Fag_navn 
+        FROM Fag f
+        JOIN Oprettet_Aflevering oa ON f.Fag_id = oa.Fag_id
+        WHERE oa.Klasse_id = ?
+        ORDER BY f.Fag_navn
+    ");
+    $fag_query->bind_param("i", $klasse_id);
+}
+$fag_query->execute();
+$alle_fag = $fag_query->get_result()->fetch_all(MYSQLI_ASSOC);
+$fag_query->close();
+>>>>>>> origin/main
 
 if ($is_teacher) {
-    // Hent lærerens afleveringer med antal afleveringer
-    $stmt = $conn->prepare("
+    // Hent lærerens afleveringer med antal afleveringer (med evt. fagfilter)
+    $sql = "
         SELECT 
             o.Oprettet_Afl_id,
             o.Oprettet_Afl_navn,
             o.Oprettet_Afl_deadline,
             o.Klasse_id,
             f.Fag_navn,
+            f.Fag_id,
             COUNT(ea.Elev_Afl_id) AS antal_afleveret,
             (SELECT COUNT(*) FROM Bruger WHERE Klasse_id = o.Klasse_id AND Level = 0) AS antal_elever
         FROM 
@@ -43,12 +72,66 @@ if ($is_teacher) {
             Elev_Aflevering ea ON o.Oprettet_Afl_id = ea.Oprettet_Afl_id
         WHERE 
             l.Laerer_Unilogin = ?
+    ";
+    
+    if ($selected_fag > 0) {
+        $sql .= " AND o.Fag_id = ?";
+    }
+    
+    $sql .= "
         GROUP BY 
             o.Oprettet_Afl_id
         ORDER BY 
             o.Oprettet_Afl_deadline DESC
-    ");
-    $stmt->bind_param("s", $unilogin);
+    ";
+    
+    $stmt = $conn->prepare($sql);
+    if ($selected_fag > 0) {
+        $stmt->bind_param("si", $unilogin, $selected_fag);
+    } else {
+        $stmt->bind_param("s", $unilogin);
+    }
+    $stmt->execute();
+    $afleveringer = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+} else {
+    // Hent afleveringer for elevens klasse hvor de ikke har afleveret endnu (med evt. fagfilter)
+    $sql = "
+        SELECT 
+            o.Oprettet_Afl_id,
+            o.Oprettet_Afl_navn,
+            o.Oprettet_Afl_deadline,
+            o.Klasse_id,
+            f.Fag_navn,
+            f.Fag_id
+        FROM 
+            Oprettet_Aflevering o
+        JOIN 
+            Fag f ON o.Fag_id = f.Fag_id
+        WHERE 
+            o.Klasse_id = ?
+            AND NOT EXISTS (
+                SELECT 1 FROM Elev_Aflevering ea 
+                WHERE ea.Oprettet_Afl_id = o.Oprettet_Afl_id 
+                AND ea.Unilogin = ?
+            )
+    ";
+    
+    if ($selected_fag > 0) {
+        $sql .= " AND o.Fag_id = ?";
+    }
+    
+    $sql .= "
+        ORDER BY 
+            o.Oprettet_Afl_deadline DESC
+    ";
+    
+    $stmt = $conn->prepare($sql);
+    if ($selected_fag > 0) {
+        $stmt->bind_param("isi", $klasse_id, $unilogin, $selected_fag);
+    } else {
+        $stmt->bind_param("is", $klasse_id, $unilogin);
+    }
     $stmt->execute();
     $afleveringer = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
@@ -146,10 +229,46 @@ $conn->close();
         .aflever-knap:hover {
             background-color: #2980b9;
         }
+<<<<<<< HEAD
+=======
+        .fag-filter {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .fag-knap {
+            padding: 8px 16px;
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #2c3e50;
+        }
+        .fag-knap:hover {
+            background-color: #d6eaf8;
+        }
+        .fag-knap.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+>>>>>>> origin/main
     </style>
 </head>
 <body>
     <h1>Mine afleveringer</h1>
+    
+    <!-- Fagfilter knapper -->
+    <div class="fag-filter">
+        <a href="?fag=0" class="fag-knap <?php echo $selected_fag == 0 ? 'active' : ''; ?>">Alle fag</a>
+        <?php foreach ($alle_fag as $fag): ?>
+            <a href="?fag=<?php echo $fag['Fag_id']; ?>" class="fag-knap <?php echo $selected_fag == $fag['Fag_id'] ? 'active' : ''; ?>">
+                <?php echo htmlspecialchars($fag['Fag_navn']); ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
     
     <?php if (!empty($afleveringer)): ?>
         <table>
@@ -181,6 +300,15 @@ $conn->close();
                         $deadline_class = 'deadline-ok';
                         $status_text = 'Aktiv (' . $days_left . ' dage tilbage)';
                     }
+<<<<<<< HEAD
+=======
+                    
+                    // Beregn fremskridt for lærere
+                    $progress = 0;
+                    if ($is_teacher && $aflevering['antal_elever'] > 0) {
+                        $progress = round(($aflevering['antal_afleveret'] / $aflevering['antal_elever']) * 100);
+                    }
+>>>>>>> origin/main
                 ?>
                 <tr>
                     <td><?php echo htmlspecialchars($aflevering['Oprettet_Afl_navn']); ?></td>
