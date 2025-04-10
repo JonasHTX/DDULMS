@@ -69,23 +69,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
     $level = (int)$_POST["bruger_level"];
     $klasse_id = ($level === 0) ? (int)$_POST["Klasse_id"] : null;
 
-    // Opret bruger
-    $conn->query("INSERT INTO Bruger (Unilogin, Password, Navn, Klasse_id, Level) 
-                 VALUES ('$unilogin', '$password', '$navn', $klasse_id, $level)");
+    // Start transaction
+    $conn->begin_transaction();
+    
+    try {
+        // Opret bruger
+        $insert_user = $conn->query("INSERT INTO Bruger (Unilogin, Password, Navn, Klasse_id, Level) 
+                   VALUES ('$unilogin', '$password', '$navn', " . ($klasse_id !== null ? $klasse_id : 'NULL') . ", $level)");
+        
+        if (!$insert_user) {
+            throw new Exception("Fejl ved oprettelse af bruger: " . $conn->error);
+        }
 
-    // Tilføj lærerinfo hvis det er en lærer
-    if ($level === 1 && !empty($_POST["laerer_klasse"])) {
-        foreach ($_POST["laerer_klasse"] as $index => $klasse) {
-            if (!empty($_POST["laerer_fag"][$index])) {
-                foreach ($_POST["laerer_fag"][$index] as $fag_id) {
-                    $conn->query("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) 
-                                VALUES ('$unilogin', $klasse, $fag_id)");
+        // Tilføj lærerinfo hvis det er en lærer
+        if ($level === 1 && !empty($_POST["laerer_klasse"])) {
+            foreach ($_POST["laerer_klasse"] as $index => $klasse) {
+                if (!empty($_POST["laerer_fag"][$index])) {
+                    foreach ($_POST["laerer_fag"][$index] as $fag_id) {
+                        $insert_teacher = $conn->query("INSERT INTO Laerer_info (Laerer_Unilogin, Klasse_id, Fag_id) 
+                                    VALUES ('$unilogin', $klasse, $fag_id)");
+                        
+                        if (!$insert_teacher) {
+                            throw new Exception("Fejl ved tilføjelse af lærerinfo: " . $conn->error);
+                        }
+                    }
                 }
             }
         }
+        
+        $conn->commit();
+        $success_msg = "Bruger oprettet succesfuldt!";
+        
+    } catch (Exception $e) {
+        $conn->rollback();
+        $error_msg = $e->getMessage();
     }
-
-    $success_msg = "Bruger oprettet succesfuldt!";
 }
 ?>
 
