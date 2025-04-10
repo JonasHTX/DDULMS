@@ -83,7 +83,7 @@ if (isset($_GET['elev_afl_id'])) {
     }
     
     $afleveringer = hentAfleveringerTilOpgave($conn, $oprettet_afl_id);
-    visAfleveringsListe($afleveringer, true, $opgave, $is_included);
+    visTreKolonnerLayout($afleveringer, $opgave, $is_included);
     
 } else {
     // Standardvisning
@@ -187,6 +187,85 @@ function hentAfleveringerTilOpgave($conn, $oprettet_afl_id) {
     }
     
     return $result;
+}
+
+function visTreKolonnerLayout($afleveringer, $opgave, $is_included) {
+    echo "<h2>Afleveringsstatus for: " . htmlspecialchars($opgave['Oprettet_Afl_navn']) . "</h2>";
+    echo "<p>Fag: " . htmlspecialchars($opgave['Fag_navn']) . " | Klasse: " . htmlspecialchars($opgave['Klasse_id']) . "</p>";
+    
+    // Opdel elever i de tre kategorier
+    $ikke_afleveret = [];
+    $afleveret = [];
+    $evalueret = [];
+    
+    foreach ($afleveringer as $afl) {
+        if ($afl['Status'] === 'Mangler at aflevere') {
+            $ikke_afleveret[] = $afl;
+        } elseif ($afl['Status'] === 'Afleveret') {
+            $afleveret[] = $afl;
+        } elseif ($afl['Status'] === 'Evalueret') {
+            $evalueret[] = $afl;
+        }
+    }
+    
+    echo '<div style="display: flex; gap: 20px; margin-top: 20px;">';
+    
+    // Kolonne 1: Elever der ikke har afleveret
+    echo '<div style="flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #fff3cd;">';
+    echo '<h3 style="margin-top: 0; color: #856404;">Ikke afleveret</h3>';
+    if (!empty($ikke_afleveret)) {
+        echo '<ul style="padding-left: 20px;">';
+        foreach ($ikke_afleveret as $elev) {
+            echo '<li style="margin-bottom: 5px;">' . htmlspecialchars($elev['Elev_navn']) . '</li>';
+        }
+        echo '</ul>';
+    } else {
+        echo '<p style="color: #28a745;">Alle elever har afleveret!</p>';
+    }
+    echo '</div>';
+    
+    // Kolonne 2: Elever der har afleveret (venter på evaluering)
+    echo '<div style="flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #e2f0fd;">';
+    echo '<h3 style="margin-top: 0; color: #004085;">Afleveret - venter på bedømmelse</h3>';
+    if (!empty($afleveret)) {
+        echo '<ul style="padding-left: 20px;">';
+        foreach ($afleveret as $elev) {
+            echo '<li style="margin-bottom: 5px;">';
+            echo '<a href="Evaluering.php?elev_afl_id=' . $elev['Elev_Afl_id'] . '" style="color: #0056b3; text-decoration: none;">';
+            echo htmlspecialchars($elev['Elev_navn']);
+            echo '</a>';
+            echo '<br><small>Afleveret: ' . htmlspecialchars($elev['Elev_Afl_tid']) . '</small>';
+            echo '</li>';
+        }
+        echo '</ul>';
+    } else {
+        echo '<p style="color: #6c757d;">Ingen afleveringer venter på bedømmelse</p>';
+    }
+    echo '</div>';
+    
+    // Kolonne 3: Elever der er evalueret
+    echo '<div style="flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #e7f9e7;">';
+    echo '<h3 style="margin-top: 0; color: #155724;">Evalueret</h3>';
+    if (!empty($evalueret)) {
+        echo '<ul style="padding-left: 20px;">';
+        foreach ($evalueret as $elev) {
+            echo '<li style="margin-bottom: 5px;">';
+            echo htmlspecialchars($elev['Elev_navn']) . ' - ';
+            echo '<strong>' . htmlspecialchars($elev['Evaluering_karakter']) . '</strong>';
+            echo '<br><small><a href="Evaluering.php?elev_afl_id=' . $elev['Elev_Afl_id'] . '" style="color: #218838;">Se detaljer</a></small>';
+            echo '</li>';
+        }
+        echo '</ul>';
+    } else {
+        echo '<p style="color: #6c757d;">Ingen afleveringer er endnu evalueret</p>';
+    }
+    echo '</div>';
+    
+    echo '</div>';
+    
+    if (!$is_included) {
+        echo "<p style='margin-top: 20px;'><a href='Evaluering.php'>Tilbage til alle afleveringer</a></p>";
+    }
 }
 
 function hentAfleveringerManglerEvaluering($conn) {
