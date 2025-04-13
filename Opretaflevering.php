@@ -1,14 +1,15 @@
 <?php
 session_start();
 include 'connection.php';
+include 'header.php';
 
 if (!isset($_SESSION["unilogin"])) {
-    die("Du skal være logget ind!");
+    die("Du skal vï¿½re logget ind!");
 }
 
 $unilogin = $_SESSION["unilogin"];
 
-// Hent klasser og tilhørende fag for læreren
+// Hent klasser og tilhï¿½rende fag for lï¿½reren
 $stmt = $conn->prepare("
     SELECT Klasse.Klasse_id, Klasse.Klasse_navn, Fag.Fag_id, Fag.Fag_navn
     FROM Laerer_info
@@ -33,7 +34,7 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-// Håndter oprettelse af aflevering
+// Hï¿½ndter oprettelse af aflevering
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_aflevering"])) {
     $afl_navn = $_POST["afl_navn"];
     $klasse_id = $_POST["klasse_id"];
@@ -63,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_aflevering"])) {
 
             klasseSelect.addEventListener("change", function () {
                 let selectedKlasse = this.value;
-                fagSelect.innerHTML = '<option value="">Vælg fag</option>';
+                fagSelect.innerHTML = '<option value="">Vï¿½lg fag</option>';
 
                 if (fagData[selectedKlasse]) {
                     fagData[selectedKlasse].forEach(fag => {
@@ -75,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_aflevering"])) {
                 }
             });
 
-            // Sæt den første mulighed ved load, hvis en klasse allerede er valgt
+            // Sï¿½t den fï¿½rste mulighed ved load, hvis en klasse allerede er valgt
             if (klasseSelect.value) {
                 klasseSelect.dispatchEvent(new Event("change"));
             }
@@ -88,17 +89,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_aflevering"])) {
     <form method="POST">
         <input type="text" name="afl_navn" placeholder="Afleveringsnavn" required>
 
-        <label>Vælg Klasse:</label>
+        <label>Vï¿½lg Klasse:</label>
         <select name="klasse_id" id="klasse_select" required>
-            <option value="">Vælg klasse</option>
+            <option value="">Vï¿½lg klasse</option>
             <?php foreach ($klasser as $id => $navn) { ?>
                 <option value="<?= $id ?>"><?= $navn ?></option>
             <?php } ?>
         </select>
 
-        <label>Vælg Fag:</label>
+        <label>Vï¿½lg Fag:</label>
         <select name="fag_id" id="fag_select" required>
-            <option value="">Vælg fag</option>
+            <option value="">Vï¿½lg fag</option>
         </select>
 
         <label>Deadline:</label>

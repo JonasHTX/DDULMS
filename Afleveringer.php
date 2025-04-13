@@ -1,9 +1,10 @@
 <?php
 session_start();
 include 'connection.php';
+include 'header.php';
 
 if (!isset($_SESSION['unilogin'])) {
-    die("Du skal være logget ind!");
+    die("Du skal vï¿½re logget ind!");
 }
 
 $unilogin = $_SESSION['unilogin'];
@@ -41,7 +42,7 @@ if ($level == 0) {
     $stmt->close();
 }
 
-// Håndter filupload for elever
+// Hï¿½ndter filupload for elever
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['aflevering_fil']) && !$afleveret) {
     $upload_dir = 'uploads/';
     if (!file_exists($upload_dir)) {
@@ -108,7 +109,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['aflevering_fil']) && 
         <?php else: ?>
             <form method="POST" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label for="aflevering_fil">Vælg fil til upload:</label>
+                    <label for="aflevering_fil">Vï¿½lg fil til upload:</label>
                     <input type="file" name="aflevering_fil" id="aflevering_fil" required>
                 </div>
                 <input type="submit" value="Aflever opgave">
@@ -154,7 +155,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['aflevering_fil']) && 
                                     <div class="form-group">
                                         <label for="karakter">Karakter:</label>
                                         <select name="karakter" id="karakter" required>
-                                            <option value="">Vælg karakter</option>
+                                            <option value="">Vï¿½lg karakter</option>
                                             <option value="12">12</option>
                                             <option value="10">10</option>
                                             <option value="7">7</option>
@@ -182,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['aflevering_fil']) && 
     <?php endif; ?>
 
     <?php
-    // Håndter evaluering
+    // Hï¿½ndter evaluering
     if (isset($_POST['submit_feedback'])) {
         $stmt = $conn->prepare("INSERT INTO Evaluering (Elev_Afl_id, Evaluering_karakter, Feedback) VALUES (?, ?, ?)");
         $stmt->bind_param("iss", $_POST['elev_afl_id'], $_POST['karakter'], $_POST['feedback']);

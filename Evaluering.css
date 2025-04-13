@@ -1,0 +1,117 @@
+body {
+  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f6f6f6;
+}
+
+.container {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+th,
+td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.feedback {
+  background-color: #f0f0f0;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+/* Three column layout */
+.three-column-container {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.column {
+  flex: 1;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+/* Column specific styles */
+.not-submitted {
+  background-color: #fff3cd;
+}
+
+.submitted-pending {
+  background-color: #e2f0fd;
+}
+
+.evaluated {
+  background-color: #e7f9e7;
+}
+
+/* Headings */
+.column h3 {
+  margin-top: 0;
+}
+
+.not-submitted h3 {
+  color: #856404;
+}
+
+.submitted-pending h3 {
+  color: #004085;
+}
+
+.evaluated h3 {
+  color: #155724;
+}
+
+/* Lists */
+.student-list {
+  padding-left: 20px;
+  list-style-type: none;
+}
+
+.student-list li {
+  margin-bottom: 5px;
+}
+
+/* Links */
+.student-link {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+.details-link {
+  color: #218838;
+  text-decoration: none;
+}
+
+/* Paragraphs */
+.all-submitted {
+  color: #28a745;
+}
+
+.no-submissions,
+.no-evaluations {
+  color: #6c757d;
+}
+
+/* Other elements */
+.submission-time {
+  color: #6c757d;
+  font-size: 0.9em;
+}
+
+.grade {
+  color: #155724;
+}

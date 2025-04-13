@@ -2,12 +2,13 @@
 ob_start();
 session_start();
 include 'connection.php';
+include 'header.php';
 
-// Håndter sletning af bruger
+// Hï¿½ndter sletning af bruger
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["slet_bruger"])) {
     $unilogin = $_POST["unilogin"];
     
-    // Slet først fra Laerer_info hvis det er en lærer
+    // Slet fï¿½rst fra Laerer_info hvis det er en lï¿½rer
     $conn->query("DELETE FROM Laerer_info WHERE Laerer_Unilogin = '$unilogin'");
     
     // Slet fra Bruger tabellen
@@ -18,33 +19,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["slet_bruger"])) {
     }
 }
 
-// Årets afslutning funktion
+// ï¿½rets afslutning funktion
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aret_omme"])) {
     // Start transaction for at sikre data integritet
     $conn->begin_transaction();
     
     try {
-        // 1. Slet alle elevafleveringer og tilhørende evalueringer
+        // 1. Slet alle elevafleveringer og tilhï¿½rende evalueringer
         $conn->query("DELETE FROM Evaluering");
         $conn->query("DELETE FROM Elev_Aflevering");
         
         // 2. Slet alle oprettede afleveringer
         $conn->query("DELETE FROM Oprettet_Aflevering");
         
-        // 3. Slet elever der går ud af skolen (Klasse_id 3, 6, 9)
+        // 3. Slet elever der gï¿½r ud af skolen (Klasse_id 3, 6, 9)
         $conn->query("DELETE FROM Bruger WHERE Level = 0 AND Klasse_id IN (3, 6, 9)");
         
         // 4. Opdater de alle andre elever
         $conn->query("UPDATE Bruger SET Klasse_id = Klasse_id + 1 WHERE Level = 0 AND Klasse_id NOT IN (3, 6, 9)");
         
-        // Commit ændringerne
+        // Commit ï¿½ndringerne
         $conn->commit();
         
-        $success_msg = "Klasser opdateret! Alle afleveringer er blevet slettet og elever i sidste årgang er blevet fjernet.";
+        $success_msg = "Klasser opdateret! Alle afleveringer er blevet slettet og elever i sidste ï¿½rgang er blevet fjernet.";
     } catch (Exception $e) {
         // Rollback ved fejl
         $conn->rollback();
-        $error_msg = "Fejl under årsskifte: " . $e->getMessage();
+        $error_msg = "Fejl under ï¿½rsskifte: " . $e->getMessage();
     }
 }
 
@@ -81,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
             throw new Exception("Fejl ved oprettelse af bruger: " . $conn->error);
         }
 
-        // Tilføj lærerinfo hvis det er en lærer
+        // Tilfï¿½j lï¿½rerinfo hvis det er en lï¿½rer
         if ($level === 1 && !empty($_POST["laerer_klasse"])) {
             foreach ($_POST["laerer_klasse"] as $index => $klasse) {
                 if (!empty($_POST["laerer_fag"][$index])) {
@@ -90,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                                     VALUES ('$unilogin', $klasse, $fag_id)");
                         
                         if (!$insert_teacher) {
-                            throw new Exception("Fejl ved tilføjelse af lærerinfo: " . $conn->error);
+                            throw new Exception("Fejl ved tilfï¿½jelse af lï¿½rerinfo: " . $conn->error);
                         }
                     }
                 }
@@ -141,7 +142,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
             let newPair = document.createElement("div");
             newPair.classList.add("class_subject_pair");
             newPair.innerHTML = `
-                <label>Vælg Klasse:</label>
+                <label>Vï¿½lg Klasse:</label>
                 <select name="laerer_klasse[]">
                     <option value="1">1.A</option>
                     <option value="2">2.A</option>
@@ -154,7 +155,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                     <option value="9">3.C</option>
                 </select>
 
-                <label>Vælg Fag:</label>
+                <label>Vï¿½lg Fag:</label>
                 <select name="laerer_fag[][]" multiple>
                     <option value="1">Dansk</option>
                     <option value="2">Engelsk</option>
@@ -163,7 +164,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                     <option value="5">Historie</option>
                     <option value="6">Kemi</option>
                     <option value="7">Fysik</option>
-                    <option value="8">Idræt</option>
+                    <option value="8">Idrï¿½t</option>
                     <option value="9">Biologi</option>
                     <option value="10">Musik</option>
                 </select>
@@ -174,11 +175,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         }
 
         function confirmDelete(unilogin, navn) {
-            return confirm('Er du sikker på at du vil slette ' + navn + ' (Unilogin: ' + unilogin + ')?');
+            return confirm('Er du sikker pï¿½ at du vil slette ' + navn + ' (Unilogin: ' + unilogin + ')?');
         }
         
         function confirmYearEnd() {
-            return confirm('ADVARSEL: Dette vil slette ALLE afleveringer og evalueringer, samt opdatere elevernes klasser. Er du sikker på at du vil fortsætte?');
+            return confirm('ADVARSEL: Dette vil slette ALLE afleveringer og evalueringer, samt opdatere elevernes klasser. Er du sikker pï¿½ at du vil fortsï¿½tte?');
         }
     </script>
 </head>
@@ -201,7 +202,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         <label>Level:</label>
         <select name="bruger_level" id="bruger_level" onchange="toggleFields()" required>
             <option value="0">Elev</option>
-            <option value="1">Lærer</option>
+            <option value="1">Lï¿½rer</option>
             <option value="2">Administrator</option>
         </select>
         
@@ -221,15 +222,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         </div>
 
         <div id="laerer_fields" style="display: none;">
-            <h3>Lærer Information</h3>
+            <h3>Lï¿½rer Information</h3>
             <div id="class_subjects_container"></div>
-            <button type="button" onclick="addClassSubjectPair()">Tilføj flere</button>
+            <button type="button" onclick="addClassSubjectPair()">Tilfï¿½j flere</button>
         </div>
 
         <button type="submit" name="opret_bruger">Opret Bruger</button>
     </form>
 
-    <h2>Året er omme</h2>
+    <h2>ï¿½ret er omme</h2>
     <div class="warning-box">
         <strong>ADVARSEL:</strong> Denne handling kan ikke fortrydes! Den vil:
         <ul>
@@ -239,7 +240,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
         </ul>
     </div>
     <form method="POST" onsubmit="return confirmYearEnd()">
-        <button type="submit" name="aret_omme">Udfør årsskifte</button>
+        <button type="submit" name="aret_omme">Udfï¿½r ï¿½rsskifte</button>
     </form>
 
     <h2>Brugere</h2>
@@ -268,7 +269,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
                             <?php 
                             switch($bruger['Level']) {
                                 case 0: echo 'Elev'; break;
-                                case 1: echo 'Lærer'; break;
+                                case 1: echo 'Lï¿½rer'; break;
                                 case 2: echo 'Admin'; break;
                                 default: echo 'Ukendt';
                             }
@@ -293,7 +294,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_bruger"])) {
     <?php endif; ?>
 
     <a href="index.php">
-        <button>Gå tilbage</button>
+        <button>Gï¿½ tilbage</button>
     </a>
 </body>
 </html>
