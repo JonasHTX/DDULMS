@@ -2,7 +2,6 @@
 ob_start();
 session_start();
 include 'connection.php';
-include 'header.php';
 
 // H�ndter sletning af bruger
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["slet_bruger"])) {

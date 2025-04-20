@@ -1,0 +1,230 @@
+/* ===== Baseline (desktop/tablet) ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: #f8f8f8;
+  color: #333;
+}
+
+/* ---------- Sidebar ---------- */
+.left-sidebar {
+  width: 300px;
+  background: #495d63;
+  padding: 20px;
+  float: left;
+  min-height: 100vh;
+}
+.left-sidebar h2 {
+  color: #fff;
+  text-align: center;
+  margin: 5rem 0 1.5rem;
+  font-size: 1.2rem;
+}
+.sidebar-opgaver {
+  list-style: none;
+}
+.sidebar-opgaver li {
+  margin-bottom: 15px;
+}
+.opgave-link {
+  display: block;
+  padding: 10px;
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.opgave-link:hover {
+  background: #5f757d;
+}
+.opgave-titel {
+  font-weight: bold;
+  font-size: 14px;
+}
+.opgave-fag {
+  font-size: 0.9rem;
+  color: #acc3a6;
+  margin-left: 8px;
+}
+.opgave-deadline {
+  font-size: 0.8rem;
+  color: #f5d6ba;
+  font-weight: bold;
+  margin-top: 2px;
+}
+.no-opgaver {
+  color: #fff;
+}
+
+/* ---------- Main area ---------- */
+.main-area {
+  margin-left: 300px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- Site header ---------- */
+.site-header {
+  height: 80px;
+  background: #fff;
+  padding: 10px 20px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.site-header .logo {
+  max-height: 5rem;
+  width: auto;
+  height: auto;
+}
+
+/* dropdown hidden on desktop */
+.opgave-dropdown {
+  display: none;
+}
+
+.content-section {
+  padding: 30px;
+  flex: 1;
+}
+.opgave-overskrift {
+  font-size: 1.5rem;
+  color: #3a4a4f;
+  margin-bottom: 10px;
+}
+.two-column-layout {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+}
+.upload-column,
+.evaluation-column {
+  flex: 1;
+}
+.upload-card,
+.evaluering-card,
+.evaluering-container {
+  background: #fff;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+.evaluering-card {
+  background: #acc3a6;
+}
+.deadline-label {
+  color: #9b1d54;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.upload-form input[type="file"] {
+  padding: 6px;
+  font-size: 0.9rem;
+}
+.besvar-knap,
+.tilbage-knap {
+  background: #9b1d54;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: center;
+  display: inline-block;
+  transition: background 0.2s;
+  cursor: pointer;
+  margin-top: 15px;
+}
+.besvar-knap:hover,
+.tilbage-knap:hover {
+  background: #7d153f;
+}
+
+.afleverings-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+}
+.afleverings-tabel th,
+.afleverings-tabel td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+}
+
+/* ===== Mobil (≤ 767px) ===== */
+@media (max-width: 767px) {
+  /* 1) Hide sidebar, single column */
+  .left-sidebar {
+    display: none;
+  }
+  .main-area {
+    margin-left: 0;
+  }
+
+  /* 2) Sticky, stacked header */
+  .site-header {
+    flex-direction: column;
+    align-items: stretch;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 10px;
+  }
+  .site-header .logo {
+    max-height: 60px;
+    margin: 0 auto 10px;
+  }
+
+  /* 3) Show dropdown on mobile */
+  .opgave-dropdown {
+    display: block;
+    width: 100%;
+    font-size: 1rem;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    outline: none;
+    background: #fff;
+  }
+
+  /* 4) Stack columns vertically */
+  .two-column-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .upload-column,
+  .evaluation-column {
+    width: 100%;
+  }
+
+  /* 5) Adjust content padding & heading */
+  .content-section {
+    padding: 15px;
+  }
+  .opgave-overskrift {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+  }
+
+  /* 6) Touch-friendly buttons */
+  .besvar-knap,
+  .tilbage-knap {
+    width: 100%;
+    font-size: 1rem;
+  }
+}

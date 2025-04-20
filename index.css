@@ -1,0 +1,269 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", sans-serif;
+  background-color: #f8f8f8;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.layout-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  background-color: #495d63;
+  color: white;
+  padding: 30px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.sidebar h1 {
+  font-size: 1.3rem;
+  margin: 5rem 0 1.5rem;
+  text-align: center;
+}
+
+.fag-liste {
+  list-style: none;
+  padding: 0;
+}
+
+.fag-liste li {
+  margin-bottom: 10px;
+}
+
+.fag-liste a {
+  display: flex;
+  justify-content: space-between;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.fag-liste a.active {
+  text-decoration: underline;
+}
+
+.antal {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+/* Content */
+.content-wrapper {
+  margin-left: 300px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 300px);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.fag-dropdown {
+  display: none;
+}
+
+.main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background-color: #f8f8f8;
+}
+
+.main-content h1 {
+  font-size: 1.5rem;
+  color: #2a4d59;
+  margin-bottom: 30px;
+}
+
+.afleverings-wrapper {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+}
+
+.column {
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 350px;
+  max-height: 350px;
+}
+
+.scroll-box {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.scroll-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-box::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.afleveringsliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.afleveringsliste li {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.fag-navn {
+  float: right;
+  font-size: 0.9em;
+  color: #888;
+}
+
+.deadline {
+  display: block;
+  margin-top: 5px;
+  color: #b3003b;
+  font-weight: bold;
+}
+
+.opgave-link,
+.opgave-titel {
+  display: inline-block;
+  padding: 2px 0;
+  color: inherit;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.opgave-link:hover,
+.opgave-titel:hover {
+  color: #2a4d59;
+}
+
+.aflevere-knap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-opret {
+  background: #a1004d;
+  color: #fff;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-opret:hover {
+  background: #87003e;
+}
+
+/* ---------------- Kun mobil (max-width: 767px) ---------------- */
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+
+  .layout-wrapper {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .content-wrapper {
+    margin-left: 0;
+    width: 100%;
+    height: auto;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #495d63;
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .site-header .logo {
+    max-height: 40px;
+    margin-bottom: 10px;
+  }
+
+  .fag-dropdown {
+    display: block;
+    width: 100%;
+    font-size: 1rem;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    outline: none;
+  }
+
+  .main-content {
+    padding: 15px;
+  }
+
+  .main-content h1 {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+  }
+
+  .afleverings-wrapper {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .column {
+    max-height: none;
+    min-height: auto;
+  }
+
+  .scroll-box {
+    max-height: 200px;
+  }
+
+  button,
+  .btn-opret {
+    width: 100%;
+    font-size: 1rem;
+  }
+
+  .afleveringsliste li {
+    padding: 14px 10px;
+    font-size: 0.95rem;
+  }
+
+  .opgave-link,
+  .opgave-titel {
+    display: block;
+    padding: 6px 0;
+  }
+}

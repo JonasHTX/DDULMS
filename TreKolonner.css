@@ -1,21 +1,23 @@
+/* TreKolonner.css */
+
+/* ===== Baseline (desktop/tablet) ===== */
 html,
 body {
   overflow-x: hidden;
-}
-
-body {
+  margin: 0;
+  padding: 0;
   font-family: Arial, sans-serif;
-  margin: 0; /* Fjern body-margin for fuld kontrol */
   background-color: #f6f6f6;
+  color: #333;
 }
 
 .page-wrapper {
-  padding: 20px 200px; /* Giver afstand fra siderne af skærmen */
+  padding: 20px 200px;
 }
 
 .container {
   display: flex;
-  gap: 10px; /* Mindre afstand mellem kolonnerne */
+  gap: 10px;
   margin-top: 20px;
   justify-content: space-between;
 }
@@ -26,56 +28,30 @@ body {
   border-radius: 10%;
   min-height: 350px;
   max-height: 350px;
-  height: 100%;
   overflow: hidden;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
 }
 
 .ikke-afleveret {
   background-color: #ffffff;
 }
-
 .afleveret {
   background-color: #f5d6ba;
 }
-
 .evalueret {
   background-color: #acc3a6;
 }
 
-.ikke-afleveret,
-.afleveret,
-.evalueret {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
-}
-
-.ikke-afleveret h3,
-.afleveret h3,
-.evalueret h3 {
-  color: #000000;
-}
-
-a {
-  color: #000000;
-  text-decoration: none;
-  display: inline-block;
-  transition: all 0.2s ease;
-}
-
-a:hover {
-  text-decoration: none;
+h3 {
+  font-size: 1.3rem;
   font-weight: bold;
-  transform: translateY(-2px);
-}
-
-small {
-  color: #6c757d;
+  margin-bottom: 15px;
 }
 
 .elev-liste {
   list-style: none;
   padding: 0;
-  margin: 20px 0 0 0;
-  width: 100%;
+  margin: 20px 0 0;
 }
 
 .elev-liste li {
@@ -84,67 +60,28 @@ small {
 
 .elev-navn {
   font-weight: bold;
-  color: #2c3e50; /* mørk blålig/grålig tekst */
+  color: #2c3e50;
   font-size: 1rem;
 }
 
 .ingen-aflevering {
-  color: #a40e4c; /* rød/pink farve */
+  color: #a40e4c;
   font-size: 0.9rem;
   font-weight: 100;
 }
 
-.afleveret {
-  background-color: #f5d6ba;
-}
-
-.elev-liste,
-.afleveret ul {
-  list-style: none;
-  padding: 0;
-  margin: 20px 0 0 0;
-  width: 100%;
-}
-
-.elev-liste li,
-.afleveret li {
-  margin-bottom: 25px;
-}
-
-.elev-navn,
-.afleveret a {
-  font-weight: bold;
-  color: #000000;
-  font-size: 1rem;
-}
-
-.ingen-aflevering,
-.afleveret small {
-  color: #a40e4c; /* pinkish-red color for 'Ingen aflevering' or small text */
-  font-size: 0.9rem;
-  font-weight: 100;
-}
-
-h3 {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #000000;
-  margin-bottom: 15px;
-}
-
+.afleveret ul,
 .evalueret ul {
   list-style: none;
   padding: 0;
-  margin: 20px 0 0 0;
-  max-height: 300px;
-  overflow-y: auto;
+  margin: 20px 0 0;
 }
 
+.afleveret li,
 .evalueret li {
-  font-weight: bold;
   margin-bottom: 20px;
   font-size: 1rem;
-  color: #000000;
+  color: #000;
   line-height: 1.4;
 }
 
@@ -152,21 +89,74 @@ h3 {
   font-weight: bold;
 }
 
-.scroll-box {
-  max-height: 300px; /* eller hvad der passer dig */
-  overflow-y: scroll;
-  padding-right: 10px;
+a {
+  color: #000;
+  text-decoration: none;
+  transition: transform 0.2s, font-weight 0.2s;
 }
 
+a:hover {
+  font-weight: bold;
+  transform: translateY(-2px);
+}
+
+small {
+  color: #6c757d;
+}
+
+/* Scrollbokse */
+.scroll-box {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
 .scroll-box::-webkit-scrollbar {
   width: 6px;
 }
-
 .scroll-box::-webkit-scrollbar-thumb {
   background-color: #888;
   border-radius: 4px;
 }
-
 .scroll-box::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* ===== Mobil (≤ 767px) ===== */
+@media (max-width: 767px) {
+  /* Reducer side-padding */
+  .page-wrapper {
+    padding: 15px;
+  }
+
+  /* Stack alle kolonner lodret */
+  .container {
+    flex-direction: column;
+  }
+
+  .column {
+    max-height: none;
+    min-height: auto;
+    margin-bottom: 20px;
+  }
+
+  /* Mindre overskrift */
+  h3 {
+    font-size: 1.2rem;
+  }
+
+  .afleveret .elev-liste br{
+    display: none;
+  }
+
+  /* Touch‑venlige links */
+  a {
+    display: block;
+    padding: 6px 0;
+  }
+
+  /* Juster p‑tekst */
+  p,
+  small {
+    font-size: 0.9rem;
+  }
 }

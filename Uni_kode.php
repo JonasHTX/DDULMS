@@ -34,18 +34,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-
 <!DOCTYPE html>
-<html>
+<html lang="da">
+
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Indtast kode</title>
+    <link rel="stylesheet" href="Uni_bruger.css">
 </head>
+
 <body>
-    <h2>Indtast din kode</h2>
-    <form method="POST">
-        <input type="password" name="password" placeholder="Kodeord" required>
-        <button type="submit">Log ind</button>
-    </form>
-    <?php if (isset($error)) echo "<p style='color: red;'>$error</p>"; ?>
+    <div class="login-container">
+        <h2>Indtast din kode</h2>
+        <form method="POST" class="login-form">
+            <input type="password" name="password" placeholder="Kodeord" required>
+            <button type="submit">Log ind</button>
+        </form>
+        <?php if (isset($error)) echo "<p style='color: red; margin-top: 1rem;'>$error</p>"; ?>
+    </div>
 </body>
+
 </html>

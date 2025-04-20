@@ -1,13 +1,16 @@
 <?php
+// Start session and output buffering at the VERY TOP
+ob_start();
 session_start();
+
+// Then include other files
 include 'connection.php';
-include 'header.php';
 
 // Aktiver fejlrapportering
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Tjek om filen inkluderes eller �bnes direkte
+// Tjek om filen inkluderes eller åbnes direkte
 $is_included = (strpos($_SERVER['PHP_SELF'], 'Evaluering.php') === false);
 
 // Tjek login
@@ -35,12 +38,12 @@ if (!$user) {
 $is_teacher = ($user['Level'] == 1);
 $current_user = $_SESSION['unilogin'];
 
-// H�ndter formularindsendelse (kun for l�rere)
+// Håndter formularindsendelse (kun for lærere)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_feedback']) && $is_teacher) {
     gemFeedback($conn);
 }
 
-// H�ndter forskellige adgangsveje
+// Håndter forskellige adgangsveje
 if (isset($_GET['elev_afl_id'])) {
     // Vis specifik aflevering
     $elev_afl_id = intval($_GET['elev_afl_id']);
@@ -56,10 +59,10 @@ if (isset($_GET['elev_afl_id'])) {
         visElevAflevering($aflevering, $is_included);
     }
 } elseif (isset($_GET['oprettet_afl_id']) && $is_teacher) {
-    // Vis alle afleveringer til en opgave (kun for l�rere)
+    // Vis alle afleveringer til en opgave (kun for lærere)
     $oprettet_afl_id = intval($_GET['oprettet_afl_id']);
 
-    // F�rst hent opgaveinfo for at tjekke om l�reren har adgang
+    // Først hent opgaveinfo for at tjekke om læreren har adgang
     $stmt = $conn->prepare("
         SELECT o.*, f.Fag_navn 
         FROM Oprettet_Aflevering o
@@ -95,6 +98,8 @@ if (isset($_GET['elev_afl_id'])) {
     }
 }
 
+// Flush output buffer at the end
+ob_end_flush();
 $conn->close();
 
 /*** FUNKTIONER ***/
@@ -129,7 +134,7 @@ function hentAflevering($conn, $elev_afl_id, $current_user, $is_teacher)
 
 function hentAfleveringerTilOpgave($conn, $oprettet_afl_id)
 {
-    // F�rst: Hent alle elever i klassen der skal aflevere
+    // Først: Hent alle elever i klassen der skal aflevere
     $stmt = $conn->prepare("
         SELECT b.Unilogin, b.Navn AS Elev_navn, k.Klasse_navn
         FROM Bruger b
@@ -143,7 +148,7 @@ function hentAfleveringerTilOpgave($conn, $oprettet_afl_id)
     $alle_elever = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    // S�: Hent alle afleveringer for denne opgave
+    // Så: Hent alle afleveringer for denne opgave
     $stmt = $conn->prepare("
         SELECT ea.Elev_Afl_id, ea.Unilogin, ea.Elev_Afl_tid, 
                b.Navn AS Elev_navn, k.Klasse_navn, ev.Evaluering_id, 
@@ -193,7 +198,6 @@ function hentAfleveringerTilOpgave($conn, $oprettet_afl_id)
 
 function visTreKolonnerLayout($afleveringer, $opgave, $is_included)
 {
-
     $ikke_afleveret = [];
     $afleveret = [];
     $evalueret = [];
@@ -208,7 +212,6 @@ function visTreKolonnerLayout($afleveringer, $opgave, $is_included)
         }
     }
 ?>
-
     <!DOCTYPE html>
     <html lang="da">
 
@@ -217,17 +220,22 @@ function visTreKolonnerLayout($afleveringer, $opgave, $is_included)
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Afleveringsstatus</title>
         <link rel="stylesheet" href="TreKolonner.css">
+        <link rel="stylesheet" href="Header.css">
     </head>
 
     <body>
 
-        <div class="page-wrapper">
+        <header class="site-header">
+            <a href="index.php">
+                <img src="images/logo.png" alt="Logo" class="logo">
+            </a>
+        </header>
 
+        <div class="page-wrapper">
             <h2>Afleveringsstatus for: <?= htmlspecialchars($opgave['Oprettet_Afl_navn']) ?></h2>
             <p>Fag: <?= htmlspecialchars($opgave['Fag_navn']) ?> | Klasse: <?= htmlspecialchars($opgave['Klasse_id']) ?></p>
 
             <div class="container">
-
                 <!-- Kolonne 1: Elever der ikke har afleveret -->
                 <div class="column ikke-afleveret">
                     <h3>Ikke afleveret</h3>
@@ -247,17 +255,18 @@ function visTreKolonnerLayout($afleveringer, $opgave, $is_included)
                     <?php endif; ?>
                 </div>
 
-
                 <!-- Kolonne 2: Elever der har afleveret (venter på evaluering) -->
                 <div class="column afleveret">
-                    <h3>Afleveret - venter bedømmelse</h3>
+                    <h3>Afleveret – venter bedømmelse</h3>
                     <?php if (!empty($afleveret)): ?>
                         <div class="scroll-box">
-                            <ul>
+                            <ul class="elev-liste">
                                 <?php foreach ($afleveret as $elev): ?>
                                     <li>
-                                        <a href="Evaluering.php?elev_afl_id=<?= $elev['Elev_Afl_id'] ?>"><?= htmlspecialchars($elev['Elev_navn']) ?></a>
-                                        <br><small>Afleveret: <?= htmlspecialchars($elev['Elev_Afl_tid']) ?></small>
+                                        <a href="Evaluering.php?elev_afl_id=<?= $elev['Elev_Afl_id'] ?>">
+                                            <?= htmlspecialchars($elev['Elev_navn']) ?>
+                                        </a> <br>
+                                        <small>Afleveret: <?= htmlspecialchars($elev['Elev_Afl_tid']) ?></small>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
@@ -267,42 +276,38 @@ function visTreKolonnerLayout($afleveringer, $opgave, $is_included)
                     <?php endif; ?>
                 </div>
 
-
-
                 <!-- Kolonne 3: Elever der er evalueret -->
                 <div class="column evalueret">
                     <h3>Evalueret</h3>
                     <?php if (!empty($evalueret)): ?>
-                        <ul>
-                            <?php foreach ($evalueret as $elev): ?>
-                                <li>
-                                    <!-- Elevens navn som et klikbart link, men uden at ligne et link -->
-                                    <a href="Evaluering.php?elev_afl_id=<?= $elev['Elev_Afl_id'] ?>" style="color: #000000; text-decoration: none;">
-                                        <?= htmlspecialchars($elev['Elev_navn']) ?>
-                                    </a>
-                                    - <strong><?= htmlspecialchars($elev['Evaluering_karakter']) ?></strong>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <div class="scroll-box">
+                            <ul class="elev-liste">
+                                <?php foreach ($evalueret as $elev): ?>
+                                    <li>
+                                        <a href="Afleveringer.php?elev_afl_id=<?= $elev['Elev_Afl_id'] ?>">
+                                            <?= htmlspecialchars($elev['Elev_navn']) ?> <strong><?= htmlspecialchars($elev['Evaluering_karakter']) ?></strong>
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
                     <?php else: ?>
                         <p>Ingen afleveringer er endnu evalueret</p>
                     <?php endif; ?>
                 </div>
-
-
             </div>
 
             <?php if (!$is_included): ?>
-                <p><a href="Evaluering.php">Tilbage til alle afleveringer</a></p>
+                <p><a href="index.php">Tilbage til alle afleveringer</a></p>
             <?php endif; ?>
-
         </div>
+
     </body>
 
     </html>
+
 <?php
 }
-
 
 function hentAfleveringerManglerEvaluering($conn)
 {
@@ -350,7 +355,7 @@ function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null, $is_inc
             echo "<h2>Afleveringsstatus for: " . htmlspecialchars($opgave['Oprettet_Afl_navn']) . "</h2>";
             echo "<p>Fag: " . htmlspecialchars($opgave['Fag_navn']) . " | Klasse: " . htmlspecialchars($opgave['Klasse_id']) . "</p>";
         } else {
-            echo "<h2>Afleveringer der venter p� evaluering</h2>";
+            echo "<h2>Afleveringer der venter på evaluering</h2>";
         }
     } else {
         echo "<h2>Mine afleveringer</h2>";
@@ -365,7 +370,6 @@ function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null, $is_inc
 
     if ($is_teacher) {
         if (isset($_GET['oprettet_afl_id'])) {
-            // Ny visning for l�rere - viser alle elever
             echo "<tr>
                     <th style='padding:8px;'>Elev</th>
                     <th style='padding:8px;'>Klasse</th>
@@ -403,7 +407,6 @@ function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null, $is_inc
                 echo "</tr>";
             }
         } else {
-            // Eksisterende visning for afleveringer der mangler evaluering
             echo "<tr>
                     <th style='padding:8px;'>Elev</th>
                     <th style='padding:8px;'>Klasse</th>
@@ -423,7 +426,6 @@ function visAfleveringsListe($afleveringer, $is_teacher, $opgave = null, $is_inc
             }
         }
     } else {
-        // Eksisterende visning for elever
         echo "<tr>
                 <th style='padding:8px;'>Opgave</th>
                 <th style='padding:8px;'>Fag</th>
@@ -471,108 +473,95 @@ function visFeedbackFormular($aflevering, $is_included = false)
 
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Giv Feedback</title>
-        <style>
-            body,
-            html {
-                margin: 0;
-                padding: 0;
-            }
-
-            body {
-                font-family: Arial, sans-serif;
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-            }
-
-            .container {
-                background: #f9f9f9;
-                padding: 20px;
-                border-radius: 5px;
-            }
-
-            textarea {
-                width: 100%;
-                height: 150px;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-            }
-
-            th,
-            td {
-                padding: 8px;
-                text-align: left;
-                border-bottom: 1px solid #ddd;
-            }
-        </style>
+        <link rel="stylesheet" href="Header.css">
         <link rel="stylesheet" href="Evaluering.css">
     </head>
 
     <body>
-        <h1>Giv Feedback</h1>
-        <div class="container">
-            <h2>Aflevering</h2>
-            <table>
-                <tr>
-                    <th>Elev:</th>
-                    <td><?= htmlspecialchars($aflevering['Elev_navn']) ?></td>
-                </tr>
-                <tr>
-                    <th>Klasse:</th>
-                    <td><?= htmlspecialchars($aflevering['Klasse_navn']) ?></td>
-                </tr>
-                <tr>
-                    <th>Fag:</th>
-                    <td><?= htmlspecialchars($aflevering['Fag_navn']) ?></td>
-                </tr>
-                <tr>
-                    <th>Opgave:</th>
-                    <td><?= htmlspecialchars($aflevering['Oprettet_Afl_navn']) ?></td>
-                </tr>
-                <tr>
-                    <th>Afleveret:</th>
-                    <td><?= htmlspecialchars($aflevering['Elev_Afl_tid']) ?></td>
-                </tr>
-            </table>
+        <header class="site-header">
+            <a href="index.php">
+                <img src="images/logo.png" alt="Logo" class="logo">
+            </a>
+        </header>
 
-            <?php if (!empty($aflevering['Filpath'])): ?>
-                <p><a href="uploads/<?= htmlspecialchars(basename($aflevering['Filpath'])) ?>" target="_blank">Download aflevering</a></p>
+        <main class="feedback-page">
+            <h1>Giv Feedback</h1>
+
+            <section class="submission-info">
+                <h2>Aflevering</h2>
+                <table class="info-table">
+                    <tr>
+                        <th>Elev:</th>
+                        <td><?= htmlspecialchars($aflevering['Elev_navn']) ?></td>
+                    </tr>
+                    <tr>
+                        <th>Klasse:</th>
+                        <td><?= htmlspecialchars($aflevering['Klasse_navn']) ?></td>
+                    </tr>
+                    <tr>
+                        <th>Fag:</th>
+                        <td><?= htmlspecialchars($aflevering['Fag_navn']) ?></td>
+                    </tr>
+                    <tr>
+                        <th>Opgave:</th>
+                        <td><?= htmlspecialchars($aflevering['Oprettet_Afl_navn']) ?></td>
+                    </tr>
+                    <tr>
+                        <th>Afleveret:</th>
+                        <td><?= htmlspecialchars($aflevering['Elev_Afl_tid']) ?></td>
+                    </tr>
+                </table>
+
+                <?php if (!empty($aflevering['Filpath'])): ?>
+                    <p>
+                        <a href="uploads/<?= htmlspecialchars(basename($aflevering['Filpath'])) ?>"
+                            target="_blank" class="download-link">
+                            Download aflevering
+                        </a>
+                    </p>
+                <?php endif; ?>
+            </section>
+
+            <section class="feedback-form-section">
+                <h2>Feedbackformular</h2>
+                <form method="post" enctype="multipart/form-data" class="feedback-form">
+                    <input type="hidden" name="elev_afl_id" value="<?= $aflevering['Elev_Afl_id'] ?>">
+
+                    <div class="form-group">
+                        <label for="karakter">Karakter:</label>
+                        <input type="text" id="karakter" name="karakter" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedback">Feedback:</label>
+                        <textarea id="feedback" name="feedback" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedback_file">Feedbackfil (valgfri):</label>
+                        <input type="file" id="feedback_file" name="feedback_file">
+                    </div>
+
+                    <button type="submit" name="submit_feedback" class="btn-submit">
+                        Gem feedback
+                    </button>
+                </form>
+            </section>
+
+            <?php if (!$is_included): ?>
+                <p class="back-link">
+                    <a href="Evaluering.php?oprettet_afl_id=<?= $aflevering['Oprettet_Afl_id'] ?>">
+                        ← Tilbage til afleveringsoversigt
+                    </a>
+                </p>
             <?php endif; ?>
-
-            <hr>
-
-            <h2>Feedbackformular</h2>
-            <form method="post" enctype="multipart/form-data">
-                <input type="hidden" name="elev_afl_id" value="<?= $aflevering['Elev_Afl_id'] ?>">
-                <div>
-                    <label for="karakter">Karakter:</label>
-                    <input type="text" id="karakter" name="karakter" required>
-                </div>
-
-                <div>
-                    <label for="feedback">Feedback:</label>
-                    <textarea id="feedback" name="feedback" required></textarea>
-                </div>
-
-                <div>
-                    <label for="feedback_file">Feedbackfil (valgfri):</label>
-                    <input type="file" id="feedback_file" name="feedback_file">
-                </div>
-
-                <button type="submit" name="submit_feedback">Gem feedback</button>
-            </form>
-        </div>
-        <?php if (!$is_included): ?>
-            <p><a href="Evaluering.php?oprettet_afl_id=<?= $aflevering['Oprettet_Afl_id'] ?>">Tilbage til afleveringsoversigt</a></p>
-        <?php endif; ?>
+        </main>
     </body>
 
     </html>
+
 <?php
 }
 
@@ -674,7 +663,7 @@ function gemFeedback($conn)
     $feedback = $_POST['feedback'];
     $filpath = null;
 
-    // H�ndter filupload
+    // Håndter filupload
     if (!empty($_FILES['feedback_file']['name'])) {
         $uploadDir = "uploads/feedback/";
         if (!is_dir($uploadDir)) {
@@ -689,7 +678,7 @@ function gemFeedback($conn)
         }
     }
 
-    // Inds�t evaluering
+    // Indsæt evaluering
     $stmt = $conn->prepare("
         INSERT INTO Evaluering (Elev_Afl_id, Evaluering_karakter, Feedback, Filpath)
         VALUES (?, ?, ?, ?)

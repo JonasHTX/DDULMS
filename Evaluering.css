@@ -1,117 +1,125 @@
+/* ===== Baseline (desktop/tablet) ===== */
+html,
 body {
+  margin: 0;
+  padding: 0;
   font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+}
+
+.feedback-page {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f6f6f6;
 }
 
-.container {
-  background: #f9f9f9;
+h1,
+h2 {
+  margin-bottom: 10px;
+  color: #2a4d59;
+}
+
+.submission-info,
+.feedback-form-section {
+  background: #fff;
   padding: 20px;
   border-radius: 5px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
   margin-bottom: 20px;
 }
 
-th,
-td {
+/* Info‑tabel */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+.info-table th,
+.info-table td {
   padding: 8px;
   text-align: left;
   border-bottom: 1px solid #ddd;
 }
 
-.feedback {
-  background-color: #f0f0f0;
-  padding: 15px;
-  margin-top: 20px;
+/* Download‑link */
+.download-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #009fe3;
+  text-decoration: none;
+}
+.download-link:hover {
+  text-decoration: underline;
 }
 
-/* Three column layout */
-.three-column-container {
-  display: flex;
-  gap: 20px;
-  margin-top: 20px;
+/* Feedback‑formular */
+.feedback-form .form-group {
+  margin-bottom: 15px;
 }
-
-.column {
-  flex: 1;
-  border: 1px solid #ddd;
-  padding: 15px;
-  border-radius: 5px;
-}
-
-/* Column specific styles */
-.not-submitted {
-  background-color: #fff3cd;
-}
-
-.submitted-pending {
-  background-color: #e2f0fd;
-}
-
-.evaluated {
-  background-color: #e7f9e7;
-}
-
-/* Headings */
-.column h3 {
-  margin-top: 0;
-}
-
-.not-submitted h3 {
-  color: #856404;
-}
-
-.submitted-pending h3 {
-  color: #004085;
-}
-
-.evaluated h3 {
-  color: #155724;
-}
-
-/* Lists */
-.student-list {
-  padding-left: 20px;
-  list-style-type: none;
-}
-
-.student-list li {
+.feedback-form label {
+  display: block;
   margin-bottom: 5px;
+  font-weight: bold;
+}
+.feedback-form input[type="text"],
+.feedback-form input[type="file"],
+.feedback-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.feedback-form textarea {
+  height: 150px;
+  resize: vertical;
+}
+.btn-submit {
+  background-color: #495d63;
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.btn-submit:hover {
+  background-color: #3f4f56;
 }
 
-/* Links */
-.student-link {
-  color: #0056b3;
+/* Tilbage‑link */
+.back-link a {
+  color: #495d63;
   text-decoration: none;
 }
-
-.details-link {
-  color: #218838;
-  text-decoration: none;
+.back-link a:hover {
+  text-decoration: underline;
 }
 
-/* Paragraphs */
-.all-submitted {
-  color: #28a745;
-}
-
-.no-submissions,
-.no-evaluations {
-  color: #6c757d;
-}
-
-/* Other elements */
-.submission-time {
-  color: #6c757d;
-  font-size: 0.9em;
-}
-
-.grade {
-  color: #155724;
+/* ===== Mobil (≤ 767px) ===== */
+@media (max-width: 767px) {
+  .feedback-page {
+    padding: 15px;
+  }
+  .submission-info,
+  .feedback-form-section {
+    padding: 15px;
+  }
+  .info-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .info-table th,
+  .info-table td {
+    padding: 6px;
+  }
+  .feedback-form input[type="text"],
+  .feedback-form textarea {
+    font-size: 0.95rem;
+  }
+  .btn-submit {
+    width: 100%;
+    font-size: 1rem;
+  }
 }

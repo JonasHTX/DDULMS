@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start();
 include 'connection.php';
 
@@ -8,7 +9,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($unilogin)) {
         echo "Unilogin skal udfyldes!";
     } else {
-        // Forbered SQL-forespørgsel
+        // Forbered SQL-forespï¿½rgsel
         $sql = "SELECT * FROM Bruger WHERE Unilogin = ?";
         $stmt = $conn->prepare($sql);
 
@@ -33,14 +34,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="da">
+
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UniLogin</title>
+    <link rel="stylesheet" href="Uni_bruger.css">
 </head>
+
 <body>
-    <form method="post">
-        <input type="text" name="unilogin" placeholder="Indtast UniLogin" required>
-        <button type="submit">Næste</button>
-    </form>
+    <div class="login-container">
+        <h2>Uni Login</h2>
+        <form method="post" class="login-form">
+            <input type="text" name="unilogin" placeholder="Indtast UniLogin" required>
+            <button type="submit">NÃ¦ste</button>
+        </form>
+    </div>
 </body>
+
 </html>
