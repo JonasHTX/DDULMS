@@ -132,8 +132,7 @@ function hentAflevering($conn, $elev_afl_id, $current_user, $is_teacher)
     return $result->fetch_assoc();
 }
 
-function hentAfleveringerTilOpgave($conn, $oprettet_afl_id)
-{
+function hentAfleveringerTilOpgave($conn, $oprettet_afl_id) {
     // Først: Hent alle elever i klassen der skal aflevere
     $stmt = $conn->prepare("
         SELECT b.Unilogin, b.Navn AS Elev_navn, k.Klasse_navn
@@ -148,11 +147,11 @@ function hentAfleveringerTilOpgave($conn, $oprettet_afl_id)
     $alle_elever = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    // Så: Hent alle afleveringer for denne opgave
+    // Så: Hent alle afleveringer for denne opgave med feedback detaljer
     $stmt = $conn->prepare("
         SELECT ea.Elev_Afl_id, ea.Unilogin, ea.Elev_Afl_tid, 
                b.Navn AS Elev_navn, k.Klasse_navn, ev.Evaluering_id, 
-               ev.Evaluering_karakter
+               ev.Evaluering_karakter, ev.Feedback, ev.Filpath AS feedback_fil
         FROM Elev_Aflevering ea
         JOIN Bruger b ON ea.Unilogin = b.Unilogin
         JOIN Klasse k ON b.Klasse_id = k.Klasse_id
@@ -176,7 +175,9 @@ function hentAfleveringerTilOpgave($conn, $oprettet_afl_id)
             'Elev_Afl_id' => null,
             'Elev_Afl_tid' => null,
             'Evaluering_id' => null,
-            'Evaluering_karakter' => null
+            'Evaluering_karakter' => null,
+            'Feedback' => null,
+            'feedback_fil' => null
         ];
 
         foreach ($afleveringer as $afl) {
@@ -186,6 +187,8 @@ function hentAfleveringerTilOpgave($conn, $oprettet_afl_id)
                 $elev_data['Elev_Afl_tid'] = $afl['Elev_Afl_tid'];
                 $elev_data['Evaluering_id'] = $afl['Evaluering_id'];
                 $elev_data['Evaluering_karakter'] = $afl['Evaluering_karakter'];
+                $elev_data['Feedback'] = $afl['Feedback'];
+                $elev_data['feedback_fil'] = $afl['feedback_fil'];
                 break;
             }
         }
@@ -277,24 +280,37 @@ function visTreKolonnerLayout($afleveringer, $opgave, $is_included)
                 </div>
 
                 <!-- Kolonne 3: Elever der er evalueret -->
-                <div class="column evalueret">
-                    <h3>Evalueret</h3>
-                    <?php if (!empty($evalueret)): ?>
-                        <div class="scroll-box">
-                            <ul class="elev-liste">
-                                <?php foreach ($evalueret as $elev): ?>
-                                    <li>
-                                        <a href="Afleveringer.php?elev_afl_id=<?= $elev['Elev_Afl_id'] ?>">
-                                            <?= htmlspecialchars($elev['Elev_navn']) ?> <strong><?= htmlspecialchars($elev['Evaluering_karakter']) ?></strong>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
+<div class="column evalueret">
+    <h3>Evalueret</h3>
+    <?php if (!empty($evalueret)): ?>
+        <div class="scroll-box">
+            <ul class="elev-liste">
+                <?php foreach ($evalueret as $elev): ?>
+                    <li class="evaluering-item">
+                        <div class="elev-info">
+                            <span class="elev-navn"><?= htmlspecialchars($elev['Elev_navn']) ?></span>
+                            <span class="karakter"><?= htmlspecialchars($elev['Evaluering_karakter']) ?></span>
                         </div>
-                    <?php else: ?>
-                        <p>Ingen afleveringer er endnu evalueret</p>
-                    <?php endif; ?>
-                </div>
+                        <?php if (!empty($elev['Feedback'])): ?>
+                            <div class="feedback-tekst">
+                                <?= nl2br(htmlspecialchars($elev['Feedback'])) ?>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (!empty($elev['feedback_fil'])): ?>
+                            <div class="feedback-fil">
+                                <a href="<?= htmlspecialchars($elev['feedback_fil']) ?>" download>
+                                    Download feedback-fil
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php else: ?>
+        <p>Ingen afleveringer er endnu evalueret</p>
+    <?php endif; ?>
+</div>
             </div>
 
             <?php if (!$is_included): ?>
@@ -689,7 +705,7 @@ function gemFeedback($conn)
         // Hent oprettet_afl_id for at kunne returnere til oversigten
         $stmt = $conn->prepare("SELECT Oprettet_Afl_id FROM Elev_Aflevering WHERE Elev_Afl_id = ?");
         $stmt->bind_param("i", $elev_afl_id);
-        $stmt->execute();
+        $stmt->execute();   
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
         $oprettet_afl_id = $row['Oprettet_Afl_id'];
