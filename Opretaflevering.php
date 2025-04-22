@@ -1,7 +1,6 @@
 <?php
 session_start();
 include 'connection.php';
-include 'header.php';
 
 if (!isset($_SESSION["unilogin"])) {
     die("Du skal v�re logget ind!");
@@ -54,15 +53,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_aflevering"])) {
 
 <!DOCTYPE html>
 <html>
+
 <head>
+    <meta charset="UTF-8">
     <title>Opret Aflevering</title>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
             let fagData = <?= json_encode($fag) ?>;
             let klasseSelect = document.getElementById("klasse_select");
             let fagSelect = document.getElementById("fag_select");
 
-            klasseSelect.addEventListener("change", function () {
+            klasseSelect.addEventListener("change", function() {
                 let selectedKlasse = this.value;
                 fagSelect.innerHTML = '<option value="">V�lg fag</option>';
 
@@ -82,8 +83,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_aflevering"])) {
             }
         });
     </script>
+    <link rel="stylesheet" href="Opretaflevering.css">
+    <link rel="stylesheet" href="Header.css">
 </head>
+
 <body>
+    <header class="site-header">
+        <a href="index.php">
+            <img src="images/logo.png" alt="Logo" class="logo">
+        </a>
+    </header>
+
     <h1>Opret Aflevering</h1>
 
     <form method="POST">
@@ -111,4 +121,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["opret_aflevering"])) {
     <br>
     <a href="index.php">Tilbage</a>
 </body>
+
 </html>

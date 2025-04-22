@@ -121,6 +121,30 @@ small {
   background: transparent;
 }
 
+.elev-info {
+  position: relative;
+}
+
+.dropdown-info {
+  display: none;
+  top: 120%;
+  left: 0;
+  background-color: #ffffff;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  z-index: 10;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.elev-info:hover .dropdown-info {
+  display: block;
+  opacity: 1;
+}
+
 /* ===== Mobil (≤ 767px) ===== */
 @media (max-width: 767px) {
   /* Reducer side-padding */
@@ -144,7 +168,7 @@ small {
     font-size: 1.2rem;
   }
 
-  .afleveret .elev-liste br{
+  .afleveret .elev-liste br {
     display: none;
   }
 
